@@ -96,7 +96,7 @@ EOF
     cd backend
     
     echo "Initializing Python project with uv..."
-    uv init --name raidio-backend --python $PYVER --seed
+    uv init --name raidio-backend --python $PYVER
     
     echo "Adding dependencies..."
     uv add fastapi uvicorn[standard] pydantic sqlalchemy
