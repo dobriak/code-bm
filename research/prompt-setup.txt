@@ -1,0 +1,1 @@
+Help me set up the following in a bash script called 'initial.sh' that will create the directory structure and initialize all technologies needed for Raidio. Context about that can be found in @README.md Please make sure to pull *ALL* latest information for the specified technologies from context7 before proceeding. Do not assume anything, ask instead.
