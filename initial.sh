@@ -44,6 +44,10 @@ check_prerequisites() {
         install_task
     fi
     ok "task $(task --version 2>/dev/null || echo 'installed')"
+    if ! command -v jq &> /dev/null; then
+        err "Please install jq"
+        exit 1
+    fi
 }
 
 setup_backend() {
