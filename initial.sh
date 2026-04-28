@@ -372,7 +372,7 @@ setup_frontend() {
     step "Setting up Frontend (React + TypeScript + TailwindCSS + ShadCN)"
 
     log "Creating React project with Bun..."
-    bun init --react frontend
+    bun init --react=tailwind frontend
 
     log "Installing Vite and TailwindCSS..."
     (cd frontend && bun add -d vite @vitejs/plugin-react)
@@ -446,13 +446,16 @@ CSSEOF
   "include": ["src"]
 }
 JSONEOF
-
+    if cat $HOME/.npmrc | grep '^ignore-scripts=true'; then
+      log "Manual bun initialization because of ignore-scripts"
+      (cd frontend/node_modules/bun && node install.js)
+    fi
     log "Initializing ShadCN UI..."
     (cd frontend && bunx shadcn@latest init -d -y)
 
     log "Updating package.json scripts for Vite..."
-    sed -i '' 's|"dev": "bun run --hot src/index.tsx"|"dev": "vite"|' frontend/package.json
-    sed -i '' 's|"build": "bun build src/index.tsx --outdir dist --target browser"|"build": "vite build"|' frontend/package.json
+    contents=$(jq '.scripts.dev = "vite"' frontend/package.json) && echo -E "${contents}" > frontend/package.json
+    contents=$(jq '.scripts.build = "vite build --base=/"' frontend/package.json) && echo -E "${contents}" > frontend/package.json
 
     log "Updating App component..."
     cat > frontend/src/App.tsx << 'TSEOF'
@@ -488,7 +491,7 @@ TSEOF
 
     log "Fixing frontend entry point import..."
     if [ -f frontend/src/frontend.tsx ]; then
-        sed -i '' 's/import { App } from ".\/App";/import App from ".\/App";/' frontend/src/frontend.tsx
+        sed -i.bak 's/import { App } from/import App from/' frontend/src/frontend.tsx && rm frontend/src/frontend.tsx.bak
     fi
 
     log "Creating frontend README.md..."
