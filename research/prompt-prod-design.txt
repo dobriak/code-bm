@@ -1,0 +1,28 @@
+You are an experienced software product manager.
+Help me design a web application called Raidio. It will consist of a backend in 'backend/' that talks to a database in 'database/raidio.db', and a frontend in 'frontend/'. All technology choices are listed in @README.md . Please write your system design findings to 'docs/DESIGN.md' and create a product design document in 'docs/PRD.md'. Instead of assuming, ask clarifying questions and make use of any MCP tools or skills as needed.
+## Setup
+This is a personal web application that makes the process of managing your own music library, creating playlists and enjoying them simple and pleasant. It will use WebRTC to stream the music directly, with Volumio being the main candidate for the streaming functionality.
+The music library exists in a single directory accessible to the application. The music there (mp3 or flac files) is organized in a hiearchy by Artist / Album / Song. The files are generally tagged well with the correct ID3 tags, including album cover pictures and genre.
+There is also a directory of jingles and other sound files that would be inserted into the playlist (over quiet moments or between songs)
+### Backend functionality
+* Scan recursively the music library folder (given the path) to extract all ID3 tags and associate each music file with its tags in the database
+* Asynchronously scan each file for additional metadata such as:
+- quiet passages (timestamps) within the first minute and the last two minutes of any song longer than 4 minutes
+- other audio characteristics such as key, timbre, danceability, chromatic mixing qualities that will be added in future versions
+* Ability to perform CRUD on playlists
+* Ability to manage live music streaming queue
+### Frontend functionality
+* Administrator functionality behind simple email/password authentication:
+- trigger manual scan or rescan of the music library and or the jingle directory
+- create Autoplay playlists that start automatically if no user playlist is present
+- ability to manage directly the playlist queue be it user or auto playlist
+- ability to insert jingles or other audio content over currently playing song
+* User functionality 
+- anyone can interact with the system and it is ok for playlists to compete for playing time
+- users can view the album art of the currently playing song, 3 songs before and 3 songs after the current one
+- users can create playlists by dragging and dropping songs to a playlist. They have the ability to do fuzzy searches on all metadata about the songs, in particular the Artist / Album / Song name / Genre / Year / Duration.
+- they can see visually if there are any quiet time spans on any song found via search or listing
+- they can also insert jingles or other audio over the quiet passages or between the songs
+### Player functionality
+- pleasant design that focuses on the currently played song, displaying all its atributes with upcoming entries also visible
+
