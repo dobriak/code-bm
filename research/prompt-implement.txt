@@ -1,1 +1,4 @@
-based on the contents of @docs/PRD.md and @docs/DESIGN.md please plan and implement Raidio. Make sure to keep written track of your progress so I can continue the implementation later if I run out of tokens. On top of code and tests, please also update the README.md files here and in frontend/ and backend/. Part of this benchmark is how easy it is to read and extend all code, not just code quality and test coverage. Make use of any tool you have in your disposal, especially around getting the latest API documentation for all technologies in use.
+Based on the contents of @docs/PRD.md and @docs/DESIGN.md please plan and implement Raidio. 
+Keep track of your progress in 'docs/IMPLEMENT.md', favor implementing one phase at a time, for example "Phase 3: User playlist", "Phase 9: Backend testing". 
+Once code and its tests are done, please also update the README.md files here and in frontend/ and backend/. Documentation on how to use the system should be written in Markdown wiki style and stemming from @docs/index.md 
+Make use of context7 for getting the latest API documentation for all technologies in use.
