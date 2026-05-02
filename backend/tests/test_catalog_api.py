@@ -1,51 +1,11 @@
 """Functional tests for the catalog API endpoints.
 
-Uses an in-memory SQLite database via httpx.AsyncClient + ASGI transport.
+Uses a temp-file SQLite database via httpx.AsyncClient + ASGI transport.
 """
 
 from __future__ import annotations
 
 import httpx
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-from raidio.db.base import Base
-from raidio.main import app
-
-
-@pytest.fixture
-async def engine(tmp_path):
-    """Create an in-memory SQLite engine."""
-    db_path = tmp_path / "test.db"
-    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path}", echo=False)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    await engine.dispose()
-
-
-@pytest.fixture
-async def session(engine):
-    """Create an async session bound to the test engine."""
-    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-    async with session_factory() as session:
-        yield session
-
-
-@pytest.fixture
-async def client(engine, monkeypatch):
-    """Create an httpx test client with a patched session factory."""
-
-    # We need to patch the settings to point at our test DB
-    # Since the API creates sessions via _get_session(), we'll need
-    # to provide test data directly and test the endpoints that work
-    # with the default database.
-    # For functional tests, we use the ASGI transport.
-    async with httpx.AsyncClient(
-        transport=httpx.ASGITransport(app=app),
-        base_url="http://test",
-    ) as c:
-        yield c
 
 
 class TestHealthEndpoint:
@@ -103,3 +63,18 @@ class TestTrackNotFound:
     async def test_get_nonexistent_cover(self, client: httpx.AsyncClient):
         response = await client.get("/api/v1/tracks/99999/cover")
         assert response.status_code == 404
+
+
+class TestRandomTrackEndpoint:
+    async def test_random_no_tracks(self, client: httpx.AsyncClient):
+        """Returns 404 when no tracks in library."""
+        resp = await client.get("/api/v1/tracks/random")
+        assert resp.status_code == 404
+
+    async def test_random_with_tracks(self, client: httpx.AsyncClient, session_factory, db_with_settings, db_with_tracks):
+        """Returns a track when library has tracks."""
+        resp = await client.get("/api/v1/tracks/random")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "id" in data
+        assert data["artist"] is not None

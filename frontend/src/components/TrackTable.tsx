@@ -19,7 +19,7 @@ export function formatDuration(ms: number | null): string {
   return `${min}:${sec.toString().padStart(2, "0")}`;
 }
 
-function AnalysisBadge({ status }: { status: string }) {
+function AnalysisBadge({ status, quietPassages }: { status: string; quietPassages?: { start_ms: number; end_ms: number; region: string }[] }) {
   const colors: Record<string, string> = {
     pending: "#f59e0b",
     running: "#3b82f6",
@@ -27,6 +27,15 @@ function AnalysisBadge({ status }: { status: string }) {
     error: "#ef4444",
   };
   const color = colors[status] || "#555";
+
+  const hoverText =
+    status === "done" && quietPassages && quietPassages.length > 0
+      ? quietPassages
+          .map((p) => `${p.region}: ${(p.start_ms / 1000).toFixed(1)}s–${(p.end_ms / 1000).toFixed(1)}s`)
+          .join("\n")
+      : status === "error"
+        ? "Analysis failed"
+        : status;
 
   return (
     <span
@@ -37,7 +46,7 @@ function AnalysisBadge({ status }: { status: string }) {
         borderRadius: "50%",
         backgroundColor: color,
       }}
-      title={status}
+      title={hoverText}
     />
   );
 }
@@ -47,11 +56,13 @@ export function TrackRow({
   track,
   inPlaylist = false,
   onDoubleClick,
+  quietPassages,
 }: {
   index: number;
   track: Track;
   inPlaylist?: boolean;
   onDoubleClick?: () => void;
+  quietPassages?: { start_ms: number; end_ms: number; region: string }[];
 }) {
   return (
     <div
@@ -124,7 +135,7 @@ export function TrackRow({
         {formatDuration(track.duration_ms)}
       </span>
       <span>
-        <AnalysisBadge status={track.analysis_status} />
+        <AnalysisBadge status={track.analysis_status} quietPassages={quietPassages} />
       </span>
     </div>
   );

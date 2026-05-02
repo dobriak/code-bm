@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from raidio import __version__
+from raidio.api.admin import router as admin_router
 from raidio.api.catalog import router as catalog_router
 from raidio.api.queue import router as queue_router
 from raidio.api.scan import router as scan_router
@@ -62,8 +63,19 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Shutdown: stop broadcaster, close Liquidsoap connection
+    # Shutdown: stop broadcaster, analysis pool, close Liquidsoap connection
     await broadcaster.stop()
+
+    # Stop the analysis worker pool if it was started
+    try:
+        from raidio.api.admin import get_analysis_pool
+
+        pool = get_analysis_pool()
+        if pool._running:
+            await pool.stop()
+    except Exception:
+        pass
+
     await ls_client.close()
 
 
@@ -79,28 +91,12 @@ app = FastAPI(
 app.include_router(catalog_router)
 app.include_router(scan_router)
 app.include_router(queue_router)
+app.include_router(admin_router)
 
 
 @app.get("/api/v1/health")
 async def health():
     return {"status": "ok", "version": __version__}
-
-
-# ── Admin queue control (auth added in Phase 4) ────────────────────
-
-
-@app.post("/api/v1/admin/queue/skip")
-async def skip_current_track(request: Request):
-    """Skip the currently playing track in Liquidsoap.
-
-    TODO(phase4): require admin JWT
-    """
-    ls_client: LiquidsoapClient = request.app.state.liquidsoap
-    try:
-        await ls_client.skip()
-        return {"status": "skipped"}
-    except LiquidsoapError as exc:
-        return JSONResponse(status_code=502, content={"detail": str(exc)})
 
 
 # ── Liquidsoap error handler ──────────────────────────────────────

@@ -1,6 +1,9 @@
 /**
  * API client for Raidio backend.
+ * Includes admin authentication helpers and all endpoint functions.
  */
+
+// ── Types ─────────────────────────────────────────────────────────
 
 export interface Track {
   id: number;
@@ -142,7 +145,123 @@ export interface RandomTrack {
   cover_art_path: string | null;
 }
 
+// ── Admin types ───────────────────────────────────────────────────
+
+export interface AdminStats {
+  track_count: number;
+  artist_count: number;
+  album_count: number;
+  genre_count: number;
+  total_playtime_ms: number;
+  queue_length: number;
+  broadcast_status: string;
+}
+
+export interface AdminSettings {
+  id: number;
+  library_path: string;
+  jingles_path: string;
+  idle_behavior: string;
+  default_auto_playlist_id: number | null;
+  crossfade_enabled: boolean;
+  crossfade_duration_ms: number;
+  gapless_enabled: boolean;
+  jingle_duck_db: number;
+  icecast_buffer_offset_ms: number;
+  min_quiet_duration_s: number;
+}
+
+export interface AdminSettingsUpdate {
+  library_path?: string;
+  jingles_path?: string;
+  idle_behavior?: string;
+  default_auto_playlist_id?: number | null;
+  crossfade_enabled?: boolean;
+  crossfade_duration_ms?: number;
+  gapless_enabled?: boolean;
+  jingle_duck_db?: number;
+  icecast_buffer_offset_ms?: number;
+  min_quiet_duration_s?: number;
+}
+
+export interface QueueItem {
+  id: number;
+  position: number;
+  playlist_id: number | null;
+  track_id: number | null;
+  jingle_id: number | null;
+  state: string;
+  artist: string | null;
+  title: string | null;
+  album: string | null;
+  duration_ms: number | null;
+  owner_label: string | null;
+}
+
+export interface QueueResponse {
+  items: QueueItem[];
+  active_playlists: { id: number; name: string; owner_label: string | null; item_count: number }[];
+}
+
+export interface AutoPlaylist {
+  id: number;
+  name: string;
+  notes: string | null;
+  is_default: boolean;
+  item_count: number;
+  created_at: string | null;
+}
+
+export interface AutoPlaylistDetail extends AutoPlaylist {
+  items: { id: number; position: number; track_id: number | null; jingle_id: number | null; overlay_at_ms: number | null }[];
+}
+
 const API_BASE = "/api/v1";
+
+// ── Auth helpers ──────────────────────────────────────────────────
+
+function getAdminJwt(): string | null {
+  try {
+    const data = localStorage.getItem("raidio.admin_jwt");
+    if (!data) return null;
+    const parsed = JSON.parse(data);
+    return parsed?.state?.jwt || null;
+  } catch {
+    return null;
+  }
+}
+
+function authHeaders(): Record<string, string> {
+  const jwt = getAdminJwt();
+  if (!jwt) return {};
+  return { Authorization: `Bearer ${jwt}` };
+}
+
+async function adminFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const headers = { ...authHeaders(), ...options.headers };
+  const resp = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  if (resp.status === 401) {
+    // Clear stale JWT and redirect to login
+    localStorage.removeItem("raidio.admin_jwt");
+    window.location.href = "/admin/login";
+    throw new Error("Unauthorized");
+  }
+  return resp;
+}
+
+// ── Admin auth ────────────────────────────────────────────────────
+
+export async function adminLogin(email: string, password: string): Promise<{ access_token: string }> {
+  const resp = await fetch(`${API_BASE}/admin/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!resp.ok) {
+    throw new Error("Invalid email or password");
+  }
+  return resp.json();
+}
 
 // ── Track endpoints ──────────────────────────────────────────────
 
@@ -232,21 +351,139 @@ export async function submitPlaylist(body: PlaylistCreateRequest): Promise<Playl
   return resp.json();
 }
 
-// ── Scan endpoints ───────────────────────────────────────────────
+// ── Scan endpoints (admin, require auth) ─────────────────────────
 
 export async function startScan(kind: "library" | "jingles"): Promise<ScanResponse> {
-  const resp = await fetch(`${API_BASE}/admin/scan/${kind}`, { method: "POST" });
+  const resp = await adminFetch(`/admin/scan/${kind}`, { method: "POST" });
   if (!resp.ok) throw new Error(`Failed to start ${kind} scan`);
   return resp.json();
 }
 
 export async function fetchScanStatus(): Promise<ScanStatus[]> {
-  const resp = await fetch(`${API_BASE}/admin/scan/status`);
+  const resp = await adminFetch("/admin/scan/status");
   if (!resp.ok) throw new Error("Failed to fetch scan status");
   return resp.json();
 }
 
 export function createScanWebSocket(): WebSocket {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return new WebSocket(`${protocol}//${window.location.host}/ws/admin/scan`);
+  const jwt = getAdminJwt();
+  const tokenParam = jwt ? `?token=${encodeURIComponent(jwt)}` : "";
+  return new WebSocket(`${protocol}//${window.location.host}/ws/admin/scan${tokenParam}`);
+}
+
+// ── Admin stats ──────────────────────────────────────────────────
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  const resp = await adminFetch("/admin/stats");
+  if (!resp.ok) throw new Error("Failed to fetch admin stats");
+  return resp.json();
+}
+
+// ── Admin settings ───────────────────────────────────────────────
+
+export async function fetchAdminSettings(): Promise<AdminSettings> {
+  const resp = await adminFetch("/admin/settings");
+  if (!resp.ok) throw new Error("Failed to fetch admin settings");
+  return resp.json();
+}
+
+export async function updateAdminSettings(body: AdminSettingsUpdate): Promise<AdminSettings> {
+  const resp = await adminFetch("/admin/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error("Failed to update admin settings");
+  return resp.json();
+}
+
+// ── Admin queue management ───────────────────────────────────────
+
+export async function fetchQueue(): Promise<QueueResponse> {
+  const resp = await adminFetch("/admin/queue");
+  if (!resp.ok) throw new Error("Failed to fetch queue");
+  return resp.json();
+}
+
+export async function reorderQueue(items: { id: number; position: number }[]): Promise<void> {
+  const resp = await adminFetch("/admin/queue/reorder", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(items),
+  });
+  if (!resp.ok) throw new Error("Failed to reorder queue");
+}
+
+export async function deleteQueueItem(itemId: number): Promise<void> {
+  const resp = await adminFetch(`/admin/queue/${itemId}`, { method: "DELETE" });
+  if (!resp.ok) throw new Error("Failed to delete queue item");
+}
+
+export async function skipCurrentTrack(): Promise<void> {
+  const resp = await adminFetch("/admin/queue/skip", { method: "POST" });
+  if (!resp.ok) throw new Error("Failed to skip track");
+}
+
+export async function insertJingle(jingleId: number): Promise<void> {
+  const resp = await adminFetch(`/admin/queue/insert-jingle/${jingleId}`, { method: "POST" });
+  if (!resp.ok) throw new Error("Failed to insert jingle");
+}
+
+// ── Auto-playlists ───────────────────────────────────────────────
+
+export async function fetchAutoPlaylists(): Promise<AutoPlaylist[]> {
+  const resp = await adminFetch("/admin/auto-playlists");
+  if (!resp.ok) throw new Error("Failed to fetch auto-playlists");
+  return resp.json();
+}
+
+export async function fetchAutoPlaylist(id: number): Promise<AutoPlaylistDetail> {
+  const resp = await adminFetch(`/admin/auto-playlists/${id}`);
+  if (!resp.ok) throw new Error("Failed to fetch auto-playlist");
+  return resp.json();
+}
+
+export async function createAutoPlaylist(body: {
+  name: string;
+  notes?: string;
+  items: { track_id?: number; jingle_id?: number }[];
+}): Promise<AutoPlaylist> {
+  const resp = await adminFetch("/admin/auto-playlists", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error("Failed to create auto-playlist");
+  return resp.json();
+}
+
+export async function updateAutoPlaylist(
+  id: number,
+  body: {
+    name?: string;
+    notes?: string;
+    is_default?: boolean;
+    items?: { track_id?: number; jingle_id?: number }[];
+  },
+): Promise<AutoPlaylist> {
+  const resp = await adminFetch(`/admin/auto-playlists/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) throw new Error("Failed to update auto-playlist");
+  return resp.json();
+}
+
+export async function deleteAutoPlaylist(id: number): Promise<void> {
+  const resp = await adminFetch(`/admin/auto-playlists/${id}`, { method: "DELETE" });
+  if (!resp.ok) throw new Error("Failed to delete auto-playlist");
+}
+
+// ── Re-analyze track ─────────────────────────────────────────────
+
+export async function reanalyzeTrack(trackId: number): Promise<void> {
+  const resp = await adminFetch(`/admin/tracks/${trackId}/reanalyze`, { method: "POST" });
+  if (!resp.ok) throw new Error("Failed to reanalyze track");
 }

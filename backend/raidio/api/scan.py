@@ -1,6 +1,6 @@
 """Admin scan API — trigger and monitor library/jingle scans.
 
-TODO(phase4): require admin JWT on all endpoints.
+All endpoints require admin JWT (Phase 4).
 """
 
 from __future__ import annotations
@@ -8,12 +8,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from datetime import UTC, datetime
+from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, Depends, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from raidio.db.models import ScanJob, ScanKind
+from raidio.core.auth import require_admin
+from raidio.db.models import AnalysisStatus, ScanJob, ScanKind, ScanStatus, Track
 from raidio.db.session import get_session_factory
 from raidio.db.settings import Settings
 from raidio.scanner.library_scanner import run_library_scan
@@ -47,14 +49,25 @@ async def _run_scan_background(
     cover_cache_path: str,
     scan_job_id: int,
 ) -> None:
-    """Run the scan in a background task with its own session."""
-    from raidio.db.session import get_session_factory
-    from raidio.db.settings import Settings
+    """Run the scan in a background task with its own session.
 
+    After Phase A completes, enqueues changed tracks for Phase B analysis.
+    """
     settings = Settings()
     session_factory = get_session_factory(settings=settings)
     async with session_factory() as session:
         try:
+            # Remember which tracks were already analyzed before scan
+            pre_scan_analyzed = {
+                t.id for t in (
+                    await session.execute(
+                        select(Track.id).where(
+                            Track.analysis_status == AnalysisStatus.DONE
+                        )
+                    )
+                ).scalars().all()
+            }
+
             job = await run_library_scan(
                 session=session,
                 library_path=scan_path,
@@ -67,6 +80,39 @@ async def _run_scan_background(
                 "done": job.tracks_added + job.tracks_updated,
                 "current_path": "",
             }
+
+            # Enqueue newly added/updated tracks for Phase B analysis
+            if job.tracks_added > 0 or job.tracks_updated > 0:
+                post_scan_tracks = (
+                    await session.execute(
+                        select(Track.id).where(
+                            Track.analysis_status == AnalysisStatus.PENDING
+                        )
+                    )
+                ).scalars().all()
+
+                # Filter out tracks that were already analyzed
+                new_for_analysis = [
+                    tid for tid in post_scan_tracks if tid not in pre_scan_analyzed
+                ]
+
+                if new_for_analysis:
+
+                    # Get or create the pool and enqueue
+                    from raidio.api.admin import get_analysis_pool
+
+                    pool = get_analysis_pool()
+                    pool.enqueue_many(new_for_analysis)
+                    logger.info(
+                        "Enqueued %d tracks for Phase B analysis", len(new_for_analysis)
+                    )
+
+                    # Start pool if not running
+                    if not pool._running:
+                        await pool.start()
+
+                    _scan_progress[scan_job_id]["phase"] = "analyzing"
+
         except Exception as exc:
             logger.error("Background scan failed: %s", exc)
             _scan_progress[scan_job_id] = {
@@ -78,12 +124,12 @@ async def _run_scan_background(
 
 
 @router.post("/library", response_model=ScanResponse)
-async def scan_library(background_tasks: BackgroundTasks):
+async def scan_library(
+    background_tasks: BackgroundTasks,
+    admin_email: Annotated[str, Depends(require_admin)],
+):
     """Kick off a library scan (Phase A). Returns scan_job_id."""
     settings = Settings()
-
-    # Create the scan job in the DB
-    from raidio.db.models import ScanJob, ScanStatus
 
     session_factory = get_session_factory(settings=settings)
     async with session_factory() as session:
@@ -116,11 +162,12 @@ async def scan_library(background_tasks: BackgroundTasks):
 
 
 @router.post("/jingles", response_model=ScanResponse)
-async def scan_jingles(background_tasks: BackgroundTasks):
+async def scan_jingles(
+    background_tasks: BackgroundTasks,
+    admin_email: Annotated[str, Depends(require_admin)],
+):
     """Kick off a jingles directory scan. Returns scan_job_id."""
     settings = Settings()
-
-    from raidio.db.models import ScanJob, ScanStatus
 
     session_factory = get_session_factory(settings=settings)
     async with session_factory() as session:
@@ -153,7 +200,7 @@ async def scan_jingles(background_tasks: BackgroundTasks):
 
 
 @router.get("/status")
-async def scan_status():
+async def scan_status(admin_email: Annotated[str, Depends(require_admin)]):
     """Return the most recent scan jobs."""
     settings = Settings()
     session_factory = get_session_factory(settings=settings)
@@ -180,11 +227,32 @@ async def scan_status():
 
 @router.websocket("/ws")
 async def scan_websocket(websocket: WebSocket):
-    """WebSocket endpoint for live scan progress updates."""
+    """WebSocket endpoint for live scan progress updates.
+
+    Note: WebSocket auth is handled by verifying a token query parameter,
+    since the standard HTTP auth headers don't apply to WebSocket upgrades.
+    """
+    # Accept first, then verify token from query params
     await websocket.accept()
     try:
+        # Check for token in query params
+        token = websocket.query_params.get("token")
+        if not token:
+            await websocket.send_json({"error": "Authentication required"})
+            await websocket.close(code=4001)
+            return
+
+        settings = Settings()
+        from raidio.core.auth import decode_access_token
+
+        try:
+            decode_access_token(token, settings.jwt_secret)
+        except Exception:
+            await websocket.send_json({"error": "Invalid token"})
+            await websocket.close(code=4001)
+            return
+
         while True:
-            # Send current progress for all active scans
             active = {k: v for k, v in _scan_progress.items() if v["phase"] != "done"}
             if active:
                 await websocket.send_json(active)

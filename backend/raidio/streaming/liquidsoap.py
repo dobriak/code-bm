@@ -144,6 +144,22 @@ class LiquidsoapClient:
         logger.info("Pushed %s to Liquidsoap queue", uri)
         return response.strip()
 
+    async def push_jingle(self, uri: str) -> str:
+        """Push a URI onto the jingle interrupt queue.
+
+        Args:
+            uri: File path or URL to queue for jingle playback.
+
+        Returns:
+            The request ID assigned by Liquidsoap.
+
+        Raises:
+            LiquidsoapCommandError: If the push fails.
+        """
+        response = await self._send_command(f'jingles_queue.push "{uri}"')
+        logger.info("Pushed jingle %s to Liquidsoap jingle queue", uri)
+        return response.strip()
+
     async def skip(self) -> None:
         """Skip the currently playing track."""
         response = await self._send_command("main.skip")

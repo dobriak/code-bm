@@ -1,6 +1,6 @@
-"""Queue API — playlist submission, now-playing, random track.
+"""Queue API — playlist submission, now-playing.
 
-Public endpoints (no auth until Phase 4).
+Public endpoints (no auth required).
 """
 
 from __future__ import annotations
@@ -73,15 +73,6 @@ class NowPlayingResponse(BaseModel):
     prev: list[QueueTrackSchema]
     next: list[QueueTrackSchema]
     buffer_offset_ms: int
-
-
-class RandomTrackSchema(BaseModel):
-    id: int
-    artist: str | None
-    title: str | None
-    album: str | None
-    duration_ms: int | None
-    cover_art_path: str | None
 
 
 # ── Dependencies ───────────────────────────────────────────────────
@@ -221,30 +212,6 @@ async def now_playing():
             prev=[_info_to_schema(p) for p in result.prev],
             next=[_info_to_schema(n) for n in result.next],
             buffer_offset_ms=result.buffer_offset_ms,
-        )
-
-
-# ── GET /tracks/random ────────────────────────────────────────────
-
-
-@router.get("/tracks/random", response_model=RandomTrackSchema)
-async def random_track():
-    """Return a uniformly random track from the library."""
-    factory = _get_session()
-    async with factory() as session:
-        stmt = select(Track).order_by(func.random()).limit(1)
-        result = await session.execute(stmt)
-        track = result.scalar_one_or_none()
-        if not track:
-            raise HTTPException(status_code=404, detail="No tracks in library")
-
-        return RandomTrackSchema(
-            id=track.id,
-            artist=track.artist,
-            title=track.title,
-            album=track.album,
-            duration_ms=track.duration_ms,
-            cover_art_path=track.cover_art_path,
         )
 
 

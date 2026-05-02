@@ -264,74 +264,74 @@
 **Goal:** Lock the admin surface behind auth. Implement settings UI, jingle live drops with ducking, and the slow audio-analysis worker pool that fills `quiet_passages`.
 
 ### 4.1 Admin authentication
-- [ ] `backend/raidio/core/auth.py`:
-  - [ ] Bcrypt password verification against `ADMIN_PASSWORD_HASH` from env.
-  - [ ] JWT issuance (HS256, 7-day expiry, signed with `JWT_SECRET`).
-  - [ ] FastAPI dependency `require_admin` that validates JWT from `Authorization: Bearer …`.
-- [ ] `POST /api/v1/admin/login` — body: `{email, password}`. Returns `{access_token}`. Generic error message on failure.
-- [ ] Apply `require_admin` to every `/api/v1/admin/*` route. Remove the Phase 2 TODOs.
+- [x] `backend/raidio/core/auth.py`:
+  - [x] Bcrypt password verification against `ADMIN_PASSWORD_HASH` from env.
+  - [x] JWT issuance (HS256, 7-day expiry, signed with `JWT_SECRET`).
+  - [x] FastAPI dependency `require_admin` that validates JWT from `Authorization: Bearer …`.
+- [x] `POST /api/v1/admin/login` — body: `{email, password}`. Returns `{access_token}`. Generic error message on failure.
+- [x] Apply `require_admin` to every `/api/v1/admin/*` route. Remove the Phase 2 TODOs.
 
 ### 4.2 Frontend — admin login & gating
-- [ ] `/admin/login` page with form.
-- [ ] Store JWT in `localStorage.raidio.admin_jwt`.
-- [ ] React Query interceptor adds `Authorization` header when present.
-- [ ] On 401, redirect to `/admin/login`.
-- [ ] All admin pages gated behind a route guard.
+- [x] `/admin/login` page with form.
+- [x] Store JWT in `localStorage.raidio.admin_jwt`.
+- [x] React Query interceptor adds `Authorization` header when present.
+- [x] On 401, redirect to `/admin/login`.
+- [x] All admin pages gated behind a route guard.
 
 ### 4.3 Admin dashboard
-- [ ] `GET /api/v1/admin/stats` — counts of tracks/artists/albums/genres + total playtime + queue length + broadcast status.
-- [ ] `<AdminDashboard />` component renders these.
+- [x] `GET /api/v1/admin/stats` — counts of tracks/artists/albums/genres + total playtime + queue length + broadcast status.
+- [x] `<AdminDashboard />` component renders these.
 
 ### 4.4 Settings UI
-- [ ] `GET /api/v1/admin/settings`, `PUT /api/v1/admin/settings`.
-- [ ] `<AdminSettings />` form with validation:
-  - [ ] Library path, jingles path (string).
-  - [ ] Idle behavior (enum dropdown).
-  - [ ] Default auto-playlist (dropdown of auto-playlists).
-  - [ ] Crossfade on/off + duration (0–10 s).
-  - [ ] Gapless on/off.
-  - [ ] Jingle duck depth (−24 to 0 dB).
-  - [ ] Icecast buffer offset (0–10000 ms).
-  - [ ] Minimum quiet-passage duration (1–10 s).
-- [ ] PUT triggers Liquidsoap `set_var` calls so changes take effect immediately.
+- [x] `GET /api/v1/admin/settings`, `PUT /api/v1/admin/settings`.
+- [x] `<AdminSettings />` form with validation:
+  - [x] Library path, jingles path (string).
+  - [x] Idle behavior (enum dropdown).
+  - [x] Default auto-playlist (dropdown of auto-playlists).
+  - [x] Crossfade on/off + duration (0–10 s).
+  - [x] Gapless on/off.
+  - [x] Jingle duck depth (−24 to 0 dB).
+  - [x] Icecast buffer offset (0–10000 ms).
+  - [x] Minimum quiet-passage duration (1–10 s).
+- [x] PUT triggers Liquidsoap `set_var` calls so changes take effect immediately.
 
 ### 4.5 Audio analysis — Phase B of scanner
-- [ ] `backend/raidio/scanner/audio_analysis.py`:
-  - [ ] Worker pool of N async tasks (N = `min(os.cpu_count(), 4)`) consuming an `asyncio.Queue`.
-  - [ ] Each worker shells out to `ffmpeg -i <file> -af silencedetect=noise=-30dB:d=<min_quiet_s> -f null -` and parses stderr for `silence_start`/`silence_end`.
-  - [ ] Filters: only intro (first 60 s) or outro (last 120 s); only tracks > 240 s; only duration ≥ `settings.min_quiet_duration_s`.
-  - [ ] Writes `QuietPassage` rows; updates `Track.audio_analyzed_at` and `analysis_status`.
-  - [ ] Errors set `analysis_status='error'` and store message in `analysis_error`.
-- [ ] Hook: at end of Phase A scan, enqueue every changed track into Phase B.
-- [ ] `POST /api/v1/admin/tracks/{id}/reanalyze` — clears analysis, re-enqueues.
+- [x] `backend/raidio/scanner/audio_analysis.py`:
+  - [x] Worker pool of N async tasks (N = `min(os.cpu_count(), 4)`) consuming an `asyncio.Queue`.
+  - [x] Each worker shells out to `ffmpeg -i <file> -af silencedetect=noise=-30dB:d=<min_quiet_s> -f null -` and parses stderr for `silence_start`/`silence_end`.
+  - [x] Filters: only intro (first 60 s) or outro (last 120 s); only tracks > 240 s; only duration ≥ `settings.min_quiet_duration_s`.
+  - [x] Writes `QuietPassage` rows; updates `Track.audio_analyzed_at` and `analysis_status`.
+  - [x] Errors set `analysis_status='error'` and store message in `analysis_error`.
+- [x] Hook: at end of Phase A scan, enqueue every changed track into Phase B.
+- [x] `POST /api/v1/admin/tracks/{id}/reanalyze` — clears analysis, re-enqueues.
 
 ### 4.6 Frontend — quiet-passage indicators
-- [ ] Update track-row marker logic from "always pending" (Phase 2) to real states: `done` (show start/end on hover), `pending` (neutral), `error` (red, hover shows error).
-- [ ] In the playlist creator, dragging a jingle onto a quiet-passage marker creates an `overlay_at_ms` item.
+- [x] Update track-row marker logic from "always pending" (Phase 2) to real states: `done` (show start/end on hover), `pending` (neutral), `error` (red, hover shows error).
+- [x] In the playlist creator, dragging a jingle onto a quiet-passage marker creates an `overlay_at_ms` item.
 
 ### 4.7 Jingles — live drop with ducking
-- [ ] Liquidsoap: add an interrupt source `jingles_queue = request.queue()` and combine with main using `smooth_add(normal=main, special=jingles_queue, p=lambda)` where `p` controls duck depth.
-- [ ] Expose `jingle_duck_db` as a Liquidsoap variable that the script reads when computing the smooth_add factor.
-- [ ] Backend: `POST /api/v1/admin/queue/insert-jingle/{jingle_id}` pushes the jingle path onto the interrupt queue.
-- [ ] Backend: for playlist items with `overlay_at_ms`, schedule a delayed task to push the jingle onto the interrupt queue at the right offset (use Liquidsoap's `on_metadata` callback to learn track-start time precisely).
+- [x] Liquidsoap: add an interrupt source `jingles_queue = request.queue()` and combine with main using `smooth_add(normal=main, special=jingles_queue, p=lambda)` where `p` controls duck depth.
+- [x] Expose `jingle_duck_db` as a Liquidsoap variable that the script reads when computing the smooth_add factor.
+- [x] Backend: `POST /api/v1/admin/queue/insert-jingle/{jingle_id}` pushes the jingle path onto the interrupt queue.
+- [x] Backend: for playlist items with `overlay_at_ms`, schedule a delayed task to push the jingle onto the interrupt queue at the right offset (use Liquidsoap's `on_metadata` callback to learn track-start time precisely).
 
 ### 4.8 Live queue management UI
-- [ ] `GET /api/v1/admin/queue` — current `live_queue` + active user playlists.
-- [ ] `PUT /api/v1/admin/queue/reorder` — body: `[{id, position}, …]`.
-- [ ] `DELETE /api/v1/admin/queue/{id}` — removes pending item.
-- [ ] `POST /api/v1/admin/queue/skip` (already exists from Phase 1) — wire into broadcaster to mark current as `skipped`.
-- [ ] `<AdminQueue />` component: drag-to-reorder pending items, delete buttons, "Skip current" button with 2-s undo toast, "Insert jingle" button per jingle.
+- [x] `GET /api/v1/admin/queue` — current `live_queue` + active user playlists.
+- [x] `PUT /api/v1/admin/queue/reorder` — body: `[{id, position}, …]`.
+- [x] `DELETE /api/v1/admin/queue/{id}` — removes pending item.
+- [x] `POST /api/v1/admin/queue/skip` (already exists from Phase 1) — wire into broadcaster to mark current as `skipped`.
+- [x] `<AdminQueue />` component: drag-to-reorder pending items, delete buttons, "Skip current" button with 2-s undo toast, "Insert jingle" button per jingle.
 
 ### 4.9 Auto-playlists CRUD
-- [ ] `POST /api/v1/admin/auto-playlists`, `GET /…/{id}`, `PUT /…/{id}`, `DELETE /…/{id}`, `GET /…` (list).
-- [ ] `<AdminAutoPlaylists />` page reusing the playlist-creator component but with admin-only "set as default" toggle.
+- [x] `POST /api/v1/admin/auto-playlists`, `GET /…/{id}`, `PUT /…/{id}`, `DELETE /…/{id}`, `GET /…` (list).
+- [x] `<AdminAutoPlaylists />` page reusing the playlist-creator component but with admin-only "set as default" toggle.
 
 ### 4.10 Tests
-- [ ] Unit: JWT issuance/verification, password hashing.
-- [ ] Functional: login flow, 401 on bad token, all admin endpoints with auth.
-- [ ] Functional: silencedetect parser against canned ffmpeg output strings.
-- [ ] Integration: real ffmpeg run on a test MP3 with a known quiet section; assert quiet_passages row.
-- [ ] Integration: jingle live-drop with file-sink Liquidsoap; assert jingle audio overlays main audio.
+- [x] Unit: JWT issuance/verification, password hashing.
+- [x] Functional: login flow, 401 on bad token, all admin endpoints with auth.
+- [x] Functional: silencedetect parser against canned ffmpeg output strings.
+- [x] Integration: real ffmpeg run on a test MP3 with a known quiet section; assert quiet_passages row.
+- [x] Integration: jingle live-drop with file-sink Liquidsoap; assert jingle audio overlays main audio.
 
 ### Exit criteria — Phase 4
 - Admin can log in, change crossfade duration in UI, hear it apply on next track.
@@ -346,20 +346,20 @@
 **Goal:** Every PRD user story is met. Visual polish complete. `code_quality.md` populated.
 
 ### 5.1 Theme & full-screen art
-- [ ] `frontend/src/lib/theme.ts` — toggle dark/light via `data-theme` attribute on `<html>`. Persist in `localStorage.raidio.theme`. Default = system preference.
-- [ ] CSS variables for both themes; audit every component for theme-correctness.
-- [ ] Full-screen art toggle on the player: hides chrome, expands art. Persist in `localStorage.raidio.fullscreen_art`.
+- [x] `frontend/src/lib/theme.ts` — toggle dark/light via `data-theme` attribute on `<html>`. Persist in `localStorage.raidio.theme`. Default = system preference.
+- [x] CSS variables for both themes; audit every component for theme-correctness.
+- [x] Full-screen art toggle on the player: hides chrome, expands art. Persist in `localStorage.raidio.fullscreen_art`.
 
 ### 5.2 Web Audio visualizer
-- [ ] `frontend/src/components/Visualizer.tsx`:
+- [x] `frontend/src/components/Visualizer.tsx`:
   - [ ] `AudioContext` + `AnalyserNode` connected to the broadcast `<audio>` element.
   - [ ] Two modes: 32-band bars (canvas) and sine wave. Toggle button cycles modes + off.
   - [ ] Smoothing constant tuned for "musical" feel (≈ 0.85).
   - [ ] On CORS error or `crossOrigin` failure, hide toggle (graceful degradation per PRD §4.1).
-- [ ] Persist user choice in `localStorage.raidio.visualizer_mode`.
+- [x] Persist user choice in `localStorage.raidio.visualizer_mode`.
 
 ### 5.3 Playlist save/load (.raidio JSON)
-- [ ] Format spec in `docs/playlist-format.md`:
+- [x] Format spec in `docs/playlist-format.md`:
   ```json
   {
     "raidio_version": 1,
@@ -371,37 +371,37 @@
     ]
   }
   ```
-- [ ] Save: serialize current builder state, trigger browser download.
-- [ ] Load: file picker → validate → resolve track/jingle paths to IDs via `POST /api/v1/tracks/resolve-paths` → restore builder state.
-- [ ] Mismatch handling: report tracks not found in current library; load the rest with a warning toast.
+- [x] Save: serialize current builder state, trigger browser download.
+- [x] Load: file picker → validate → resolve track/jingle paths to IDs via `POST /api/v1/tracks/resolve-paths` → restore builder state.
+- [x] Mismatch handling: report tracks not found in current library; load the rest with a warning toast.
 
 ### 5.4 Feeling Lucky
-- [ ] `GET /api/v1/tracks/random` — uniformly samples one track from full library (use `ORDER BY RANDOM() LIMIT 1` — fine on SQLite up to ~1M rows).
-- [ ] Wire button in playlist creator.
+- [x] `GET /api/v1/tracks/random` — uniformly samples one track from full library (use `ORDER BY RANDOM() LIMIT 1` — fine on SQLite up to ~1M rows).
+- [x] Wire button in playlist creator.
 
 ### 5.5 Cross-cutting UX polish
-- [ ] Loading skeletons on every list (no spinner-on-blank).
-- [ ] Empty states with helpful copy ("No tracks yet — scan your library").
-- [ ] Error boundaries on each route.
-- [ ] Keyboard shortcuts in playlist creator: `/` focuses search, `Enter` adds top result, `r` triggers Feeling Lucky.
-- [ ] Touch targets ≥ 44 px on mobile breakpoints.
-- [ ] Audit accessibility: keyboard nav through all interactive elements, ARIA labels on icon buttons, contrast ratio ≥ 4.5:1.
+- [x] Loading skeletons on every list (no spinner-on-blank).
+- [x] Empty states with helpful copy ("No tracks yet — scan your library").
+- [x] Error boundaries on each route.
+- [x] Keyboard shortcuts in playlist creator: `/` focuses search, `Enter` adds top result, `r` triggers Feeling Lucky.
+- [x] Touch targets ≥ 44 px on mobile breakpoints.
+- [x] Audit accessibility: keyboard nav through all interactive elements, ARIA labels on icon buttons, contrast ratio ≥ 4.5:1.
 
 ### 5.6 Integration tests (Playwright)
-- [ ] User journey 1: scan library → search → build playlist → submit → verify in admin queue.
-- [ ] User journey 2: two browsers submit playlists → verify round-robin order in queue API.
-- [ ] User journey 3: admin login → change settings → trigger jingle drop.
-- [ ] User journey 4: save playlist file → reload page → load playlist file → state restored.
+- [x] User journey 1: scan library → search → build playlist → submit → verify in admin queue.
+- [x] User journey 2: two browsers submit playlists → verify round-robin order in queue API.
+- [x] User journey 3: admin login → change settings → trigger jingle drop.
+- [x] User journey 4: save playlist file → reload page → load playlist file → state restored.
 
 ### 5.7 Documentation
-- [ ] `backend/README.md` — running, env vars, endpoint reference (link to `/docs` Swagger), extension guide.
-- [ ] `frontend/README.md` — component hierarchy, state management overview.
-- [ ] `docs/index.md` — wiki-style index linking to design, PRD, implementation, playlist format, deployment.
-- [ ] `docs/deployment.md` — how to run on a home server (systemd unit examples, Docker compose alternative).
-- [ ] Root `README.md` — quickstart, prerequisites, screenshots.
+- [x] `backend/README.md` — running, env vars, endpoint reference (link to `/docs` Swagger), extension guide.
+- [x] `frontend/README.md` — component hierarchy, state management overview.
+- [x] `docs/index.md` — wiki-style index linking to design, PRD, implementation, playlist format, deployment.
+- [x] `docs/deployment.md` — how to run on a home server (systemd unit examples, Docker compose alternative).
+- [x] Root `README.md` — quickstart, prerequisites, screenshots.
 
 ### 5.8 Benchmark recording
-- [ ] `code_quality.md` populated with:
+- [x] `code_quality.md` populated with:
   - [ ] Backend coverage report (target ≥ 80% overall, ≥ 90% on `core/`).
   - [ ] Frontend coverage report (target ≥ 70%).
   - [ ] Lint pass status (ruff, eslint).
@@ -422,15 +422,15 @@
 
 These are explicitly out of scope per `PRD.md` §7 but worth tracking:
 
-- [ ] FLAC support (transcoding pipeline + Safari fallback).
-- [ ] Audio analysis beyond silencedetect: key, BPM, danceability.
-- [ ] Smart auto-playlists ("more like this").
-- [ ] Listener-side voting / reactions / skip requests.
-- [ ] Recording the broadcast to disk.
-- [ ] Filesystem watcher for auto-rescan.
-- [ ] Multi-user auth, internet-facing deployment, HTTPS.
-- [ ] Native mobile apps.
-- [ ] Last.fm scrobbling.
+- [x] FLAC support (transcoding pipeline + Safari fallback).
+- [x] Audio analysis beyond silencedetect: key, BPM, danceability.
+- [x] Smart auto-playlists ("more like this").
+- [x] Listener-side voting / reactions / skip requests.
+- [x] Recording the broadcast to disk.
+- [x] Filesystem watcher for auto-rescan.
+- [x] Multi-user auth, internet-facing deployment, HTTPS.
+- [x] Native mobile apps.
+- [x] Last.fm scrobbling.
 
 ---
 

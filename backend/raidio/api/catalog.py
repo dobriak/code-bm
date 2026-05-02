@@ -201,6 +201,36 @@ async def list_tracks(
         )
 
 
+class RandomTrackSchema(BaseModel):
+    id: int
+    artist: str | None
+    title: str | None
+    album: str | None
+    duration_ms: int | None
+    cover_art_path: str | None
+
+
+@router.get("/tracks/random", response_model=RandomTrackSchema)
+async def random_track():
+    """Return a uniformly random track from the library."""
+    factory = _get_session()
+    async with factory() as session:
+        stmt = select(Track).order_by(func.random()).limit(1)
+        result = await session.execute(stmt)
+        track = result.scalar_one_or_none()
+        if not track:
+            raise HTTPException(status_code=404, detail="No tracks in library")
+
+        return RandomTrackSchema(
+            id=track.id,
+            artist=track.artist,
+            title=track.title,
+            album=track.album,
+            duration_ms=track.duration_ms,
+            cover_art_path=track.cover_art_path,
+        )
+
+
 @router.get("/tracks/{track_id}", response_model=TrackDetail)
 async def get_track(track_id: int):
     """Get full track detail including quiet passages."""

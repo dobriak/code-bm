@@ -4,6 +4,7 @@ import { useUserStore } from "./stores/userStore";
 import PlayerPage from "./pages/PlayerPage";
 import CreatePage from "./pages/CreatePage";
 import AdminPage from "./pages/AdminPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -92,6 +93,7 @@ function App() {
         <Routes>
           <Route path="/" element={<PlayerPage />} />
           <Route path="/create" element={<CreatePage />} />
+          <Route path="/admin/login" element={<AdminLoginPage />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
         <NavLayout />

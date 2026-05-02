@@ -68,6 +68,19 @@ def create_fts_tables(conn: sqlite3.Connection) -> None:
         conn.execute(trigger_sql)
 
 
+def create_fts_table(sync_conn: object) -> None:
+    """Create FTS5 table and triggers — suitable for run_sync()."""
+    import sqlite3
+
+    if isinstance(sync_conn, sqlite3.Connection):
+        create_fts_tables(sync_conn)
+    else:
+        # SQLAlchemy connection — get raw connection
+        raw = sync_conn.connection.dbapi_connection  # type: ignore[attr-defined]
+        if raw is not None:
+            create_fts_tables(raw)
+
+
 def drop_fts_tables(conn: sqlite3.Connection) -> None:
     """Drop the FTS5 table and triggers."""
     for name in ["tracks_fts_insert", "tracks_fts_update", "tracks_fts_delete"]:
