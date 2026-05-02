@@ -89,6 +89,13 @@ class LiquidsoapClient:
             return match.group(0)
         return result
 
+    async def push_jingle(self, uri: str) -> str:
+        result = await self._send_command(f'queue.pushj {uri}')
+        match = re.search(r"^\d+$", result.strip())
+        if match:
+            return match.group(0)
+        return result
+
     async def skip(self) -> None:
         await self._send_command("request.queue.skip")
 
@@ -98,6 +105,9 @@ class LiquidsoapClient:
     async def get_var(self, name: str) -> str:
         result = await self._send_command(f"var.get {name}")
         return result.strip()
+
+    async def set_jingle_duck_db(self, db: float) -> None:
+        await self.set_var("jingle_duck_db", str(db))
 
     async def queue_size(self) -> int:
         result = await self._send_command("queue.length")

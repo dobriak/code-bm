@@ -114,64 +114,64 @@
 **Goal:** Admin can point Raidio at a folder of MP3s and the database fills with rows. Browsing and search work in the UI. No streaming integration yet — Phase 1's hardcoded file still plays.
 
 ### 2.1 SQLAlchemy models
-- [ ] `backend/raidio/db/models.py` — implement every table from `DESIGN.md` §5:
-  - [ ] `Track`, `QuietPassage`, `Jingle`, `Playlist`, `PlaylistItem`, `LiveQueueItem`, `Setting`, `ScanJob`.
-  - [ ] All foreign keys, enums (`AnalysisStatus`, `QuietRegion`, `PlaylistKind`, `LiveQueueState`, `IdleBehavior`, `ScanKind`), check constraints.
-- [ ] Indices per `DESIGN.md` §5.2.
-- [ ] Alembic revision: `0002_initial_schema`.
-- [ ] Apply with `task db:migrate`.
+- [x] `backend/raidio/db/models.py` — implement every table from `DESIGN.md` §5:
+  - [x] `Track`, `QuietPassage`, `Jingle`, `Playlist`, `PlaylistItem`, `LiveQueueItem`, `Setting`, `ScanJob`.
+  - [x] All foreign keys, enums (`AnalysisStatus`, `QuietRegion`, `PlaylistKind`, `LiveQueueState`, `IdleBehavior`, `ScanKind`), check constraints.
+- [x] Indices per `DESIGN.md` §5.2.
+- [x] Alembic revision: `0002_initial_schema`.
+- [x] Apply with `task db:migrate`.
 
 ### 2.2 Settings bootstrap
-- [ ] On startup, ensure `settings` table has exactly one row; if missing, insert defaults: `crossfade_enabled=False`, `crossfade_duration_ms=4000`, `gapless_enabled=True`, `jingle_duck_db=-12.0`, `icecast_buffer_offset_ms=3000`, `idle_behavior='random'`, `library_path` and `jingles_path` from env.
+- [x] On startup, ensure `settings` table has exactly one row; if missing, insert defaults: `crossfade_enabled=False`, `crossfade_duration_ms=4000`, `gapless_enabled=True`, `jingle_duck_db=-12.0`, `icecast_buffer_offset_ms=3000`, `idle_behavior='random'`, `library_path` and `jingles_path` from env.
 
 ### 2.3 FTS5 virtual table
-- [ ] `backend/raidio/db/fts.py` — raw SQL to create `tracks_fts` virtual table over `(artist, album, title, genre)` with content table sync triggers.
-- [ ] Alembic revision: `0003_fts5`.
-- [ ] Helper: `def fts_query(text: str) -> str` that escapes user input and produces an FTS5 MATCH expression with prefix-fuzzy semantics (per `DESIGN.md` §8).
+- [x] `backend/raidio/db/fts.py` — raw SQL to create `tracks_fts` virtual table over `(artist, album, title, genre)` with content table sync triggers.
+- [x] Alembic revision: `0003_fts5`.
+- [x] Helper: `def fts_query(text: str) -> str` that escapes user input and produces an FTS5 MATCH expression with prefix-fuzzy semantics (per `DESIGN.md` §8).
 
 ### 2.4 Scanner — Phase A (tag extraction)
-- [ ] `backend/raidio/scanner/walker.py` — `scan_library(path)` async generator yielding `(absolute_path, file_size, mtime)` for every `.mp3`.
-- [ ] `backend/raidio/scanner/tags.py` — `read_tags(path) -> TrackTags` using Mutagen; extract: artist, album, title, genre, year, track number, disc number, duration, bitrate, sample rate, embedded cover art (bytes + mime).
-- [ ] `backend/raidio/scanner/cover_cache.py` — `store_cover(bytes, mime) -> Path` writing to `cache/covers/<sha1>.jpg|png`, deduplicated by hash.
-- [ ] `backend/raidio/scanner/library_scanner.py` — orchestrator:
-  - [ ] Computes `file_hash` (sha1 of first 64 KiB + size).
-  - [ ] Upserts `Track` rows.
-  - [ ] Detects removed files (path no longer exists, hash unique to removed path).
-  - [ ] Records progress in a `ScanJob` row.
-- [ ] Targets: ≥ 500 files/sec on SSD (`DESIGN.md` §6).
+- [x] `backend/raidio/scanner/walker.py` — `scan_library(path)` async generator yielding `(absolute_path, file_size, mtime)` for every `.mp3`.
+- [x] `backend/raidio/scanner/tags.py` — `read_tags(path) -> TrackTags` using Mutagen; extract: artist, album, title, genre, year, track number, disc number, duration, bitrate, sample rate, embedded cover art (bytes + mime).
+- [x] `backend/raidio/scanner/cover_cache.py` — `store_cover(bytes, mime) -> Path` writing to `cache/covers/<sha1>.jpg|png`, deduplicated by hash.
+- [x] `backend/raidio/scanner/library_scanner.py` — orchestrator:
+  - [x] Computes `file_hash` (sha1 of first 64 KiB + size).
+  - [x] Upserts `Track` rows.
+  - [x] Detects removed files (path no longer exists, hash unique to removed path).
+  - [x] Records progress in a `ScanJob` row.
+- [x] Targets: ≥ 500 files/sec on SSD (`DESIGN.md` §6).
 
 ### 2.5 Scanner triggering API
-- [ ] `POST /api/v1/admin/scan/library` — kicks off Phase A as a background asyncio task. Returns `scan_job_id`.
-- [ ] `POST /api/v1/admin/scan/jingles` — same for jingles directory.
-- [ ] `GET /api/v1/admin/scan/status` — current/recent jobs with counts.
-- [ ] `WebSocket /ws/admin/scan` — emits `{phase, total, done, current_path}` events.
-- [ ] **Note:** auth not yet enforced; mark these endpoints with a TODO and add `# TODO(phase4): require admin JWT`.
+- [x] `POST /api/v1/admin/scan/library` — kicks off Phase A as a background asyncio task. Returns `scan_job_id`.
+- [x] `POST /api/v1/admin/scan/jingles` — same for jingles directory.
+- [x] `GET /api/v1/admin/scan/status` — current/recent jobs with counts.
+- [x] `WebSocket /ws/admin/scan` — emits `{phase, total, done, current_path}` events.
+- [x] **Note:** auth not yet enforced; mark these endpoints with a TODO and add `# TODO(phase4): require admin JWT`.
 
 ### 2.6 Catalog read API (public)
-- [ ] `GET /api/v1/tracks` — query params per `DESIGN.md` §9. Cursor-based pagination keyed on `(artist, album, track_number, id)`.
-- [ ] `GET /api/v1/tracks/{id}` — full detail incl. quiet passages (empty list for now).
-- [ ] `GET /api/v1/tracks/{id}/cover` — streams the file from `cache/covers/`.
-- [ ] `GET /api/v1/artists`, `/albums`, `/genres` — facet listings with counts.
-- [ ] `GET /api/v1/jingles`.
+- [x] `GET /api/v1/tracks` — query params per `DESIGN.md` §9. Cursor-based pagination keyed on `(artist, album, track_number, id)`.
+- [x] `GET /api/v1/tracks/{id}` — full detail incl. quiet passages (empty list for now).
+- [x] `GET /api/v1/tracks/{id}/cover` — streams the file from `cache/covers/`.
+- [x] `GET /api/v1/artists`, `/albums`, `/genres` — facet listings with counts.
+- [x] `GET /api/v1/jingles`.
 
 ### 2.7 Frontend — admin scan panel (minimal, unauthenticated)
-- [ ] `/admin` route renders an `AdminScanPanel` component (auth comes in Phase 4).
-- [ ] Two buttons: "Scan library", "Scan jingles".
-- [ ] Live progress bar + tail of recent paths via WebSocket.
+- [x] `/admin` route renders an `AdminScanPanel` component (auth comes in Phase 4).
+- [x] Two buttons: "Scan library", "Scan jingles".
+- [x] Live progress bar + tail of recent paths via WebSocket.
 
 ### 2.8 Frontend — browse & search
-- [ ] `/create` route shows the playlist creator's left pane only for now: a virtualized track list (`react-virtuoso`).
-- [ ] Search box on top wired to `GET /tracks?q=`.
-- [ ] Faceted filters (artist, album, genre, year range, duration range) in a sidebar.
-- [ ] Hierarchical browse: Genres → Artists → Albums → Songs (tabs or breadcrumb nav).
-- [ ] Each track row shows artist–album–title and a placeholder marker for quiet passages (always neutral "pending" for now).
+- [x] `/create` route shows the playlist creator's left pane only for now: a virtualized track list (`react-virtuoso`).
+- [x] Search box on top wired to `GET /tracks?q=`.
+- [x] Faceted filters (artist, album, genre, year range, duration range) in a sidebar.
+- [x] Hierarchical browse: Genres → Artists → Albums → Songs (tabs or breadcrumb nav).
+- [x] Each track row shows artist–album–title and a placeholder marker for quiet passages (always neutral "pending" for now).
 
 ### 2.9 Tests
-- [ ] Unit: `read_tags` against a curated set of test MP3s with edge cases (missing tags, weird encodings, no cover art).
-- [ ] Unit: `fts_query` escape/build logic.
-- [ ] Functional: scanner against a temp directory of generated tiny MP3s (use `pydub` or pre-baked fixtures); assert correct row counts, correct removal detection.
-- [ ] Functional: every API endpoint with httpx.AsyncClient.
-- [ ] Frontend: Vitest tests for the search component and track-table virtualization.
+- [x] Unit: `read_tags` against a curated set of test MP3s with edge cases (missing tags, weird encodings, no cover art).
+- [x] Unit: `fts_query` escape/build logic.
+- [x] Functional: scanner against a temp directory of generated tiny MP3s (use `pydub` or pre-baked fixtures); assert correct row counts, correct removal detection.
+- [x] Functional: every API endpoint with httpx.AsyncClient.
+- [x] Frontend: Vitest tests for the search component and track-table virtualization.
 
 ### Exit criteria — Phase 2
 - Point `LIBRARY_PATH` at a real folder of ≥ 1000 MP3s, click "Scan library" → all tracks land in DB within 1 minute (SSD).
@@ -186,70 +186,70 @@
 **Goal:** Real broadcast driven by user playlists. Round-robin scheduling. Gapless and crossfade work. The hardcoded test MP3 from Phase 1 is gone.
 
 ### 3.1 Funny-name generator
-- [ ] `backend/raidio/core/names.py` — adjective + scientist word lists (commit lists into repo per PRD §9 recommendation).
-- [ ] `generate_name() -> str` returns `"<adjective>_<scientist>"`.
-- [ ] Mirror the same lists in `frontend/src/lib/names.ts` so generation is client-side (no roundtrip).
+- [x] `backend/raidio/core/names.py` — adjective + scientist word lists (commit lists into repo per PRD §9 recommendation).
+- [x] `generate_name() -> str` returns `"<adjective>_<scientist>"`.
+- [x] Mirror the same lists in `frontend/src/lib/names.ts` so generation is client-side (no roundtrip).
 
 ### 3.2 Frontend — user identity
-- [ ] On first load, generate funny name client-side, persist to `localStorage.raidio.user_label`.
-- [ ] Header shows current name; click → "New name" button re-rolls.
-- [ ] All POSTs that create playlists send `X-Raidio-User: <label>`.
+- [x] On first load, generate funny name client-side, persist to `localStorage.raidio.user_label`.
+- [x] Header shows current name; click → "New name" button re-rolls.
+- [x] All POSTs that create playlists send `X-Raidio-User: <label>`.
 
 ### 3.3 Scheduler — core logic
-- [ ] `backend/raidio/core/scheduler.py` — pure round-robin function:
-  - [ ] Input: list of playlists (each a list of items) + per-playlist cursors.
-  - [ ] Output: next item to enqueue, advanced cursors.
-  - [ ] No I/O. Fully unit-testable.
-- [ ] Scheduler tests cover: single playlist, multiple playlists, late-joiner, exhaustion, empty case.
+- [x] `backend/raidio/core/scheduler.py` — pure round-robin function:
+  - [x] Input: list of playlists (each a list of items) + per-playlist cursors.
+  - [x] Output: next item to enqueue, advanced cursors.
+  - [x] No I/O. Fully unit-testable.
+- [x] Scheduler tests cover: single playlist, multiple playlists, late-joiner, exhaustion, empty case.
 
 ### 3.4 Scheduler — runtime
-- [ ] `backend/raidio/streaming/broadcaster.py` — long-running asyncio task that:
-  - [ ] Watches `live_queue` table + active `user_session` playlists.
-  - [ ] Calls scheduler logic to determine next item.
-  - [ ] Pushes URIs to Liquidsoap when the queue depth in Liquidsoap drops below 2.
-  - [ ] Handles idle behavior: random track from library, default auto-playlist, or silence.
-- [ ] Started in FastAPI's `lifespan` context.
-- [ ] Reacts to `request.on_air` events from Liquidsoap (subscribe via telnet) to update `LiveQueueItem.state` and `started_at`/`ended_at`.
+- [x] `backend/raidio/streaming/broadcaster.py` — long-running asyncio task that:
+  - [x] Watches `live_queue` table + active `user_session` playlists.
+  - [x] Calls scheduler logic to determine next item.
+  - [x] Pushes URIs to Liquidsoap when the queue depth in Liquidsoap drops below 2.
+  - [x] Handles idle behavior: random track from library, default auto-playlist, or silence.
+- [x] Started in FastAPI's `lifespan` context.
+- [x] Reacts to `request.on_air` events from Liquidsoap (subscribe via telnet) to update `LiveQueueItem.state` and `started_at`/`ended_at`.
 
 ### 3.5 Now-playing state
-- [ ] `backend/raidio/core/now_playing.py` — tracks current/prev3/next3 from `live_queue`.
-- [ ] Aligns the "current track" emit time to `now() + icecast_buffer_offset_ms` so listener UIs match what they hear (per `DESIGN.md` §4 latency caveat).
-- [ ] `GET /api/v1/now-playing` returns the structured shape.
-- [ ] `WebSocket /ws/now-playing` pushes updates on every track change.
+- [x] `backend/raidio/core/now_playing.py` — tracks current/prev3/next3 from `live_queue`.
+- [x] Aligns the "current track" emit time to `now() + icecast_buffer_offset_ms` so listener UIs match what they hear (per `DESIGN.md` §4 latency caveat).
+- [x] `GET /api/v1/now-playing` returns the structured shape.
+- [x] `WebSocket /ws/now-playing` pushes updates on every track change.
 
 ### 3.6 Playlist submission
-- [ ] `POST /api/v1/queue/playlists` — body: `{name, notes, items: [{track_id?, jingle_id?, overlay_at_ms?}], owner_label}`. Persists as `playlist.kind='user_session'` and registers it with the scheduler.
-- [ ] Validation: at least one item, items reference real tracks/jingles, only one of track_id/jingle_id set per item (unless overlay).
-- [ ] Returns: estimated time-to-play of the playlist's first item.
+- [x] `POST /api/v1/queue/playlists` — body: `{name, notes, items: [{track_id?, jingle_id?, overlay_at_ms?}], owner_label}`. Persists as `playlist.kind='user_session'` and registers it with the scheduler.
+- [x] Validation: at least one item, items reference real tracks/jingles, only one of track_id/jingle_id set per item (unless overlay).
+- [x] Returns: estimated time-to-play of the playlist's first item.
 
 ### 3.7 Liquidsoap — gapless + crossfade
-- [ ] Update `liquidsoap/raidio.liq`:
-  - [ ] Wrap main queue in `crossfade(duration=...)` controlled by a `var.set` variable from the backend.
-  - [ ] Configure for gapless via `audio_to_stereo` + appropriate buffer settings.
-  - [ ] Remove the `single("test.mp3")` fallback; on empty queue, pull from the idle source per settings.
-- [ ] Backend toggles `crossfade_enabled` and `crossfade_duration_ms` via `LiquidsoapClient.set_var`.
+- [x] Update `liquidsoap/raidio.liq`:
+  - [x] Wrap main queue in `crossfade(duration=...)` controlled by a `var.set` variable from the backend.
+  - [x] Configure for gapless via `audio_to_stereo` + appropriate buffer settings.
+  - [x] Remove the `single("test.mp3")` fallback; on empty queue, pull from the idle source per settings.
+- [x] Backend toggles `crossfade_enabled` and `crossfade_duration_ms` via `LiquidsoapClient.set_var`.
 
 ### 3.8 Frontend — player view
-- [ ] `/` route: `<NowPlaying />` component.
-  - [ ] Full-bleed album art (≥ 80% viewport height by default).
-  - [ ] Prev-3 / next-3 strip with artist + title.
-  - [ ] Subscribes to `/ws/now-playing`.
-  - [ ] Standard local controls (volume, mute, local pause). Tooltip clarifies these are local.
-  - [ ] Remaining time of currently playing song (computed from `started_at` + duration).
+- [x] `/` route: `<NowPlaying />` component.
+  - [x] Full-bleed album art (≥ 80% viewport height by default).
+  - [x] Prev-3 / next-3 strip with artist + title.
+  - [x] Subscribes to `/ws/now-playing`.
+  - [x] Standard local controls (volume, mute, local pause). Tooltip clarifies these are local.
+  - [x] Remaining time of currently playing song (computed from `started_at` + duration).
 
 ### 3.9 Frontend — playlist creator (right pane)
-- [ ] Two-pane layout in `/create` (left pane from Phase 2, right pane new).
-- [ ] Drag from left → right adds to playlist (dnd-kit).
-- [ ] Reorder within right pane.
-- [ ] Name (required) + notes (optional) fields.
-- [ ] "Feeling lucky" button: `GET /api/v1/tracks/random` (add this endpoint).
-- [ ] "Send to queue" button: POSTs to `/api/v1/queue/playlists`, shows toast.
+- [x] Two-pane layout in `/create` (left pane from Phase 2, right pane new).
+- [x] Drag from left → right adds to playlist (dnd-kit).
+- [x] Reorder within right pane.
+- [x] Name (required) + notes (optional) fields.
+- [x] "Feeling lucky" button: `GET /api/v1/tracks/random` (add this endpoint).
+- [x] "Send to queue" button: POSTs to `/api/v1/queue/playlists`, shows toast.
 
 ### 3.10 Tests
-- [ ] Unit: scheduler logic (already in 3.3).
-- [ ] Functional: end-to-end queue submission against a fake Liquidsoap that records pushed URIs; assert round-robin order with multiple submissions.
-- [ ] Integration: real Liquidsoap configured with a file sink instead of Icecast; submit a 3-track playlist, assert audio file contains 3 distinct tracks.
-- [ ] Frontend: drag-and-drop works in Vitest with @testing-library + dnd-kit test utilities.
+- [x] Unit: scheduler logic (already in 3.3).
+- [x] Functional: end-to-end queue submission against a fake Liquidsoap that records pushed URIs; assert round-robin order with multiple submissions.
+- [x] Integration: real Liquidsoap configured with a file sink instead of Icecast; submit a 3-track playlist, assert audio file contains 3 distinct tracks.
+- [x] Frontend: drag-and-drop works in Vitest with @testing-library + dnd-kit test utilities.
 
 ### Exit criteria — Phase 3
 - Two browser tabs (different funny names) each submit a 5-track playlist → broadcast plays them interleaved A1, B1, A2, B2, … with no audible gaps.
@@ -264,80 +264,80 @@
 **Goal:** Lock the admin surface behind auth. Implement settings UI, jingle live drops with ducking, and the slow audio-analysis worker pool that fills `quiet_passages`.
 
 ### 4.1 Admin authentication
-- [ ] `backend/raidio/core/auth.py`:
-  - [ ] Bcrypt password verification against `ADMIN_PASSWORD_HASH` from env.
-  - [ ] JWT issuance (HS256, 7-day expiry, signed with `JWT_SECRET`).
-  - [ ] FastAPI dependency `require_admin` that validates JWT from `Authorization: Bearer …`.
-- [ ] `POST /api/v1/admin/login` — body: `{email, password}`. Returns `{access_token}`. Generic error message on failure.
-- [ ] Apply `require_admin` to every `/api/v1/admin/*` route. Remove the Phase 2 TODOs.
+- [x] `backend/raidio/core/auth.py`:
+  - [x] Bcrypt password verification against `ADMIN_PASSWORD_HASH` from env.
+  - [x] JWT issuance (HS256, 7-day expiry, signed with `JWT_SECRET`).
+  - [x] FastAPI dependency `require_admin` that validates JWT from `Authorization: Bearer …`.
+- [x] `POST /api/v1/admin/login` — body: `{email, password}`. Returns `{access_token}`. Generic error message on failure.
+- [x] Apply `require_admin` to every `/api/v1/admin/*` route. Remove the Phase 2 TODOs.
 
 ### 4.2 Frontend — admin login & gating
-- [ ] `/admin/login` page with form.
-- [ ] Store JWT in `localStorage.raidio.admin_jwt`.
-- [ ] React Query interceptor adds `Authorization` header when present.
-- [ ] On 401, redirect to `/admin/login`.
-- [ ] All admin pages gated behind a route guard.
+- [x] `/admin/login` page with form.
+- [x] Store JWT in `localStorage.raidio.admin_jwt`.
+- [x] React Query interceptor adds `Authorization` header when present.
+- [x] On 401, redirect to `/admin/login`.
+- [x] All admin pages gated behind a route guard.
 
 ### 4.3 Admin dashboard
-- [ ] `GET /api/v1/admin/stats` — counts of tracks/artists/albums/genres + total playtime + queue length + broadcast status.
-- [ ] `<AdminDashboard />` component renders these.
+- [x] `GET /api/v1/admin/stats` — counts of tracks/artists/albums/genres + total playtime + queue length + broadcast status.
+- [x] `<AdminDashboard />` component renders these.
 
 ### 4.4 Settings UI
-- [ ] `GET /api/v1/admin/settings`, `PUT /api/v1/admin/settings`.
-- [ ] `<AdminSettings />` form with validation:
-  - [ ] Library path, jingles path (string).
-  - [ ] Idle behavior (enum dropdown).
-  - [ ] Default auto-playlist (dropdown of auto-playlists).
-  - [ ] Crossfade on/off + duration (0–10 s).
-  - [ ] Gapless on/off.
-  - [ ] Jingle duck depth (−24 to 0 dB).
-  - [ ] Icecast buffer offset (0–10000 ms).
-  - [ ] Minimum quiet-passage duration (1–10 s).
-- [ ] PUT triggers Liquidsoap `set_var` calls so changes take effect immediately.
+- [x] `GET /api/v1/admin/settings`, `PUT /api/v1/admin/settings`.
+- [x] `<AdminSettings />` form with validation:
+  - [x] Library path, jingles path (string).
+  - [x] Idle behavior (enum dropdown).
+  - [x] Default auto-playlist (dropdown of auto-playlists).
+  - [x] Crossfade on/off + duration (0–10 s).
+  - [x] Gapless on/off.
+  - [x] Jingle duck depth (−24 to 0 dB).
+  - [x] Icecast buffer offset (0–10000 ms).
+  - [x] Minimum quiet-passage duration (1–10 s).
+- [x] PUT triggers Liquidsoap `set_var` calls so changes take effect immediately.
 
 ### 4.5 Audio analysis — Phase B of scanner
-- [ ] `backend/raidio/scanner/audio_analysis.py`:
-  - [ ] Worker pool of N async tasks (N = `min(os.cpu_count(), 4)`) consuming an `asyncio.Queue`.
-  - [ ] Each worker shells out to `ffmpeg -i <file> -af silencedetect=noise=-30dB:d=<min_quiet_s> -f null -` and parses stderr for `silence_start`/`silence_end`.
-  - [ ] Filters: only intro (first 60 s) or outro (last 120 s); only tracks > 240 s; only duration ≥ `settings.min_quiet_duration_s`.
-  - [ ] Writes `QuietPassage` rows; updates `Track.audio_analyzed_at` and `analysis_status`.
-  - [ ] Errors set `analysis_status='error'` and store message in `analysis_error`.
-- [ ] Hook: at end of Phase A scan, enqueue every changed track into Phase B.
-- [ ] `POST /api/v1/admin/tracks/{id}/reanalyze` — clears analysis, re-enqueues.
+- [x] `backend/raidio/scanner/audio_analysis.py`:
+  - [x] Worker pool of N async tasks (N = `min(os.cpu_count(), 4)`) consuming an `asyncio.Queue`.
+  - [x] Each worker shells out to `ffmpeg -i <file> -af silencedetect=noise=-30dB:d=<min_quiet_s> -f null -` and parses stderr for `silence_start`/`silence_end`.
+  - [x] Filters: only intro (first 60 s) or outro (last 120 s); only tracks > 240 s; only duration ≥ `settings.min_quiet_duration_s`.
+  - [x] Writes `QuietPassage` rows; updates `Track.audio_analyzed_at` and `analysis_status`.
+  - [x] Errors set `analysis_status='error'` and store message in `analysis_error`.
+- [x] Hook: at end of Phase A scan, enqueue every changed track into Phase B.
+- [x] `POST /api/v1/admin/tracks/{id}/reanalyze` — clears analysis, re-enqueues.
 
 ### 4.6 Frontend — quiet-passage indicators
-- [ ] Update track-row marker logic from "always pending" (Phase 2) to real states: `done` (show start/end on hover), `pending` (neutral), `error` (red, hover shows error).
-- [ ] In the playlist creator, dragging a jingle onto a quiet-passage marker creates an `overlay_at_ms` item.
+- [x] Update track-row marker logic from "always pending" (Phase 2) to real states: `done` (show start/end on hover), `pending` (neutral), `error` (red, hover shows error).
+- [x] In the playlist creator, dragging a jingle onto a quiet-passage marker creates an `overlay_at_ms` item.
 
 ### 4.7 Jingles — live drop with ducking
-- [ ] Liquidsoap: add an interrupt source `jingles_queue = request.queue()` and combine with main using `smooth_add(normal=main, special=jingles_queue, p=lambda)` where `p` controls duck depth.
-- [ ] Expose `jingle_duck_db` as a Liquidsoap variable that the script reads when computing the smooth_add factor.
-- [ ] Backend: `POST /api/v1/admin/queue/insert-jingle/{jingle_id}` pushes the jingle path onto the interrupt queue.
-- [ ] Backend: for playlist items with `overlay_at_ms`, schedule a delayed task to push the jingle onto the interrupt queue at the right offset (use Liquidsoap's `on_metadata` callback to learn track-start time precisely).
+- [x] Liquidsoap: add an interrupt source `jingles_queue = request.queue()` and combine with main using `smooth_add(normal=main, special=jingles_queue, p=lambda)` where `p` controls duck depth.
+- [x] Expose `jingle_duck_db` as a Liquidsoap variable that the script reads when computing the smooth_add factor.
+- [x] Backend: `POST /api/v1/admin/queue/insert-jingle/{jingle_id}` pushes the jingle path onto the interrupt queue.
+- [x] Backend: for playlist items with `overlay_at_ms`, schedule a delayed task to push the jingle onto the interrupt queue at the right offset (use Liquidsoap's `on_metadata` callback to learn track-start time precisely).
 
 ### 4.8 Live queue management UI
-- [ ] `GET /api/v1/admin/queue` — current `live_queue` + active user playlists.
-- [ ] `PUT /api/v1/admin/queue/reorder` — body: `[{id, position}, …]`.
-- [ ] `DELETE /api/v1/admin/queue/{id}` — removes pending item.
-- [ ] `POST /api/v1/admin/queue/skip` (already exists from Phase 1) — wire into broadcaster to mark current as `skipped`.
-- [ ] `<AdminQueue />` component: drag-to-reorder pending items, delete buttons, "Skip current" button with 2-s undo toast, "Insert jingle" button per jingle.
+- [x] `GET /api/v1/admin/queue` — current `live_queue` + active user playlists.
+- [x] `PUT /api/v1/admin/queue/reorder` — body: `[{id, position}, …]`.
+- [x] `DELETE /api/v1/admin/queue/{id}` — removes pending item.
+- [x] `POST /api/v1/admin/queue/skip` (already exists from Phase 1) — wire into broadcaster to mark current as `skipped`.
+- [x] `<AdminQueue />` component: drag-to-reorder pending items, delete buttons, "Skip current" button with 2-s undo toast, "Insert jingle" button per jingle.
 
 ### 4.9 Auto-playlists CRUD
-- [ ] `POST /api/v1/admin/auto-playlists`, `GET /…/{id}`, `PUT /…/{id}`, `DELETE /…/{id}`, `GET /…` (list).
-- [ ] `<AdminAutoPlaylists />` page reusing the playlist-creator component but with admin-only "set as default" toggle.
+- [x] `POST /api/v1/admin/auto-playlists`, `GET /…/{id}`, `PUT /…/{id}`, `DELETE /…/{id}`, `GET /…` (list).
+- [x] `<AdminAutoPlaylists />` page reusing the playlist-creator component but with admin-only "set as default" toggle.
 
 ### 4.10 Tests
-- [ ] Unit: JWT issuance/verification, password hashing.
-- [ ] Functional: login flow, 401 on bad token, all admin endpoints with auth.
-- [ ] Functional: silencedetect parser against canned ffmpeg output strings.
-- [ ] Integration: real ffmpeg run on a test MP3 with a known quiet section; assert quiet_passages row.
-- [ ] Integration: jingle live-drop with file-sink Liquidsoap; assert jingle audio overlays main audio.
+- [x] Unit: JWT issuance/verification, password hashing.
+- [x] Functional: login flow, 401 on bad token, all admin endpoints with auth.
+- [x] Functional: silencedetect parser against canned ffmpeg output strings.
+- [x] Integration: real ffmpeg run on a test MP3 with a known quiet section; assert quiet_passages row.
+- [x] Integration: jingle live-drop with file-sink Liquidsoap; assert jingle audio overlays main audio.
 
 ### Exit criteria — Phase 4
-- Admin can log in, change crossfade duration in UI, hear it apply on next track.
-- Admin clicks "Insert jingle" → jingle audibly overlays current track at correct duck depth; track keeps playing.
-- After scanning a folder with songs > 4 min, quiet passages populate within minutes; track rows show indicators.
-- Backend coverage ≥ 80% overall, ≥ 90% on `core/`.
+- [x] Admin can log in, change crossfade duration in UI, hear it apply on next track.
+- [x] Admin clicks "Insert jingle" → jingle audibly overlays current track at correct duck depth; track keeps playing.
+- [x] After scanning a folder with songs > 4 min, quiet passages populate within minutes; track rows show indicators.
+- [x] Backend coverage ≥ 80% overall, ≥ 90% on `core/`.
 
 ---
 
