@@ -1,6 +1,7 @@
 import { useRef, useCallback } from "react";
-import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
-import { Track } from "../api/client";
+import { Virtuoso } from "react-virtuoso";
+import type { VirtuosoHandle } from "react-virtuoso";
+import type { Track } from "../api/client";
 
 interface TrackTableProps {
   tracks: Track[];
@@ -10,7 +11,7 @@ interface TrackTableProps {
   onLoadMore: () => void;
 }
 
-function formatDuration(ms: number | null): string {
+export function formatDuration(ms: number | null): string {
   if (ms === null || ms === undefined) return "";
   const totalSec = Math.floor(ms / 1000);
   const min = Math.floor(totalSec / 60);
@@ -35,9 +36,97 @@ function AnalysisBadge({ status }: { status: string }) {
         height: "6px",
         borderRadius: "50%",
         backgroundColor: color,
-        title: status,
       }}
+      title={status}
     />
+  );
+}
+
+export function TrackRow({
+  index,
+  track,
+  inPlaylist = false,
+  onDoubleClick,
+}: {
+  index: number;
+  track: Track;
+  inPlaylist?: boolean;
+  onDoubleClick?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "2rem 1fr 1fr 2fr 1fr 4rem 2rem",
+        gap: "0.5rem",
+        padding: "0.5rem 1rem",
+        borderBottom: "1px solid #111",
+        fontSize: "0.8125rem",
+        cursor: onDoubleClick ? "pointer" : "default",
+        alignItems: "center",
+        opacity: inPlaylist ? 0.4 : 1,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "#141414";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = "transparent";
+      }}
+      onDoubleClick={onDoubleClick}
+      title={onDoubleClick ? "Double-click to add to playlist" : undefined}
+    >
+      <span style={{ color: "#555", fontSize: "0.75rem" }}>{index + 1}</span>
+      <span
+        style={{
+          color: "#ccc",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={track.artist ?? undefined}
+      >
+        {track.artist || "—"}
+      </span>
+      <span
+        style={{
+          color: "#999",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={track.album ?? undefined}
+      >
+        {track.album || "—"}
+      </span>
+      <span
+        style={{
+          color: "#fafafa",
+          fontWeight: 500,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+        title={track.title ?? undefined}
+      >
+        {track.title || "—"}
+      </span>
+      <span
+        style={{
+          color: "#888",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {track.genre || ""}
+      </span>
+      <span style={{ color: "#888", textAlign: "right", fontSize: "0.75rem" }}>
+        {formatDuration(track.duration_ms)}
+      </span>
+      <span>
+        <AnalysisBadge status={track.analysis_status} />
+      </span>
+    </div>
   );
 }
 
@@ -106,81 +195,6 @@ export default function TrackTable({ tracks, total, hasNextPage, isFetchingNextP
           ),
         }}
       />
-    </div>
-  );
-}
-
-function TrackRow({ index, track }: { index: number; track: Track }) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "2rem 1fr 1fr 2fr 1fr 4rem 2rem",
-        gap: "0.5rem",
-        padding: "0.5rem 1rem",
-        borderBottom: "1px solid #111",
-        fontSize: "0.8125rem",
-        cursor: "default",
-        alignItems: "center",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = "#141414";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "transparent";
-      }}
-    >
-      <span style={{ color: "#555", fontSize: "0.75rem" }}>{index + 1}</span>
-      <span
-        style={{
-          color: "#ccc",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={track.artist ?? undefined}
-      >
-        {track.artist || "—"}
-      </span>
-      <span
-        style={{
-          color: "#999",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={track.album ?? undefined}
-      >
-        {track.album || "—"}
-      </span>
-      <span
-        style={{
-          color: "#fafafa",
-          fontWeight: 500,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={track.title ?? undefined}
-      >
-        {track.title || "—"}
-      </span>
-      <span
-        style={{
-          color: "#888",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {track.genre || ""}
-      </span>
-      <span style={{ color: "#888", textAlign: "right", fontSize: "0.75rem" }}>
-        {formatDuration(track.duration_ms)}
-      </span>
-      <span>
-        <AnalysisBadge status={track.analysis_status} />
-      </span>
     </div>
   );
 }

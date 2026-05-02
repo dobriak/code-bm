@@ -3,7 +3,8 @@
  */
 
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { fetchAlbums, fetchArtists, fetchGenres, fetchTracks, TracksQuery } from "./client";
+import type { TracksQuery } from "./client";
+import { fetchAlbums, fetchArtists, fetchGenres, fetchTracks } from "./client";
 
 export function useTracks(params: TracksQuery = {}) {
   return useInfiniteQuery({

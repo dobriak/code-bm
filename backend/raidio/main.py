@@ -10,8 +10,10 @@ from fastapi.responses import JSONResponse
 
 from raidio import __version__
 from raidio.api.catalog import router as catalog_router
+from raidio.api.queue import router as queue_router
 from raidio.api.scan import router as scan_router
 from raidio.db.settings import Settings
+from raidio.streaming.broadcaster import Broadcaster
 from raidio.streaming.liquidsoap import LiquidsoapClient, LiquidsoapError
 
 logger = logging.getLogger(__name__)
@@ -49,9 +51,19 @@ async def lifespan(app: FastAPI):
         )
 
     app.state.liquidsoap = ls_client
+
+    # Start the broadcaster (long-running scheduler task)
+    broadcaster = Broadcaster(
+        session_factory=session_factory,
+        ls_client=ls_client,
+    )
+    await broadcaster.start()
+    app.state.broadcaster = broadcaster
+
     yield
 
-    # Shutdown: close Liquidsoap connection
+    # Shutdown: stop broadcaster, close Liquidsoap connection
+    await broadcaster.stop()
     await ls_client.close()
 
 
@@ -66,6 +78,7 @@ app = FastAPI(
 # Include API routers
 app.include_router(catalog_router)
 app.include_router(scan_router)
+app.include_router(queue_router)
 
 
 @app.get("/api/v1/health")

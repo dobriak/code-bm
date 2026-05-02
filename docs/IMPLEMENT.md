@@ -186,67 +186,67 @@
 **Goal:** Real broadcast driven by user playlists. Round-robin scheduling. Gapless and crossfade work. The hardcoded test MP3 from Phase 1 is gone.
 
 ### 3.1 Funny-name generator
-- [ ] `backend/raidio/core/names.py` — adjective + scientist word lists (commit lists into repo per PRD §9 recommendation).
-- [ ] `generate_name() -> str` returns `"<adjective>_<scientist>"`.
-- [ ] Mirror the same lists in `frontend/src/lib/names.ts` so generation is client-side (no roundtrip).
+- [x] `backend/raidio/core/names.py` — adjective + scientist word lists (commit lists into repo per PRD §9 recommendation).
+- [x] `generate_name() -> str` returns `"<adjective>_<scientist>"`.
+- [x] Mirror the same lists in `frontend/src/lib/names.ts` so generation is client-side (no roundtrip).
 
 ### 3.2 Frontend — user identity
-- [ ] On first load, generate funny name client-side, persist to `localStorage.raidio.user_label`.
-- [ ] Header shows current name; click → "New name" button re-rolls.
-- [ ] All POSTs that create playlists send `X-Raidio-User: <label>`.
+- [x] On first load, generate funny name client-side, persist to `localStorage.raidio.user_label`.
+- [x] Header shows current name; click → "New name" button re-rolls.
+- [x] All POSTs that create playlists send `X-Raidio-User: <label>`.
 
 ### 3.3 Scheduler — core logic
-- [ ] `backend/raidio/core/scheduler.py` — pure round-robin function:
-  - [ ] Input: list of playlists (each a list of items) + per-playlist cursors.
-  - [ ] Output: next item to enqueue, advanced cursors.
-  - [ ] No I/O. Fully unit-testable.
-- [ ] Scheduler tests cover: single playlist, multiple playlists, late-joiner, exhaustion, empty case.
+- [x] `backend/raidio/core/scheduler.py` — pure round-robin function:
+  - [x] Input: list of playlists (each a list of items) + per-playlist cursors.
+  - [x] Output: next item to enqueue, advanced cursors.
+  - [x] No I/O. Fully unit-testable.
+- [x] Scheduler tests cover: single playlist, multiple playlists, late-joiner, exhaustion, empty case.
 
 ### 3.4 Scheduler — runtime
-- [ ] `backend/raidio/streaming/broadcaster.py` — long-running asyncio task that:
-  - [ ] Watches `live_queue` table + active `user_session` playlists.
-  - [ ] Calls scheduler logic to determine next item.
-  - [ ] Pushes URIs to Liquidsoap when the queue depth in Liquidsoap drops below 2.
-  - [ ] Handles idle behavior: random track from library, default auto-playlist, or silence.
-- [ ] Started in FastAPI's `lifespan` context.
+- [x] `backend/raidio/streaming/broadcaster.py` — long-running asyncio task that:
+  - [x] Watches `live_queue` table + active `user_session` playlists.
+  - [x] Calls scheduler logic to determine next item.
+  - [x] Pushes URIs to Liquidsoap when the queue depth in Liquidsoap drops below 2.
+  - [x] Handles idle behavior: random track from library, default auto-playlist, or silence.
+- [x] Started in FastAPI's `lifespan` context.
 - [ ] Reacts to `request.on_air` events from Liquidsoap (subscribe via telnet) to update `LiveQueueItem.state` and `started_at`/`ended_at`.
 
 ### 3.5 Now-playing state
-- [ ] `backend/raidio/core/now_playing.py` — tracks current/prev3/next3 from `live_queue`.
-- [ ] Aligns the "current track" emit time to `now() + icecast_buffer_offset_ms` so listener UIs match what they hear (per `DESIGN.md` §4 latency caveat).
-- [ ] `GET /api/v1/now-playing` returns the structured shape.
-- [ ] `WebSocket /ws/now-playing` pushes updates on every track change.
+- [x] `backend/raidio/core/now_playing.py` — tracks current/prev3/next3 from `live_queue`.
+- [x] Aligns the "current track" emit time to `now() + icecast_buffer_offset_ms` so listener UIs match what they hear (per `DESIGN.md` §4 latency caveat).
+- [x] `GET /api/v1/now-playing` returns the structured shape.
+- [x] `WebSocket /ws/now-playing` pushes updates on every track change.
 
 ### 3.6 Playlist submission
-- [ ] `POST /api/v1/queue/playlists` — body: `{name, notes, items: [{track_id?, jingle_id?, overlay_at_ms?}], owner_label}`. Persists as `playlist.kind='user_session'` and registers it with the scheduler.
-- [ ] Validation: at least one item, items reference real tracks/jingles, only one of track_id/jingle_id set per item (unless overlay).
-- [ ] Returns: estimated time-to-play of the playlist's first item.
+- [x] `POST /api/v1/queue/playlists` — body: `{name, notes, items: [{track_id?, jingle_id?, overlay_at_ms?}], owner_label}`. Persists as `playlist.kind='user_session'` and registers it with the scheduler.
+- [x] Validation: at least one item, items reference real tracks/jingles, only one of track_id/jingle_id set per item (unless overlay).
+- [x] Returns: estimated time-to-play of the playlist's first item.
 
 ### 3.7 Liquidsoap — gapless + crossfade
-- [ ] Update `liquidsoap/raidio.liq`:
-  - [ ] Wrap main queue in `crossfade(duration=...)` controlled by a `var.set` variable from the backend.
-  - [ ] Configure for gapless via `audio_to_stereo` + appropriate buffer settings.
-  - [ ] Remove the `single("test.mp3")` fallback; on empty queue, pull from the idle source per settings.
+- [x] Update `liquidsoap/raidio.liq`:
+  - [x] Wrap main queue in `crossfade(duration=...)` controlled by a `var.set` variable from the backend.
+  - [x] Configure for gapless via `audio_to_stereo` + appropriate buffer settings.
+  - [x] Remove the `single("test.mp3")` fallback; on empty queue, pull from the idle source per settings.
 - [ ] Backend toggles `crossfade_enabled` and `crossfade_duration_ms` via `LiquidsoapClient.set_var`.
 
 ### 3.8 Frontend — player view
-- [ ] `/` route: `<NowPlaying />` component.
-  - [ ] Full-bleed album art (≥ 80% viewport height by default).
-  - [ ] Prev-3 / next-3 strip with artist + title.
-  - [ ] Subscribes to `/ws/now-playing`.
-  - [ ] Standard local controls (volume, mute, local pause). Tooltip clarifies these are local.
-  - [ ] Remaining time of currently playing song (computed from `started_at` + duration).
+- [x] `/` route: `<NowPlaying />` component.
+  - [x] Full-bleed album art (≥ 80% viewport height by default).
+  - [x] Prev-3 / next-3 strip with artist + title.
+  - [x] Subscribes to `/ws/now-playing`.
+  - [x] Standard local controls (volume, mute, local pause). Tooltip clarifies these are local.
+  - [x] Remaining time of currently playing song (computed from `started_at` + duration).
 
 ### 3.9 Frontend — playlist creator (right pane)
-- [ ] Two-pane layout in `/create` (left pane from Phase 2, right pane new).
-- [ ] Drag from left → right adds to playlist (dnd-kit).
-- [ ] Reorder within right pane.
-- [ ] Name (required) + notes (optional) fields.
-- [ ] "Feeling lucky" button: `GET /api/v1/tracks/random` (add this endpoint).
-- [ ] "Send to queue" button: POSTs to `/api/v1/queue/playlists`, shows toast.
+- [x] Two-pane layout in `/create` (left pane from Phase 2, right pane new).
+- [x] Drag from left → right adds to playlist (dnd-kit).
+- [x] Reorder within right pane.
+- [x] Name (required) + notes (optional) fields.
+- [x] "Feeling lucky" button: `GET /api/v1/tracks/random` (add this endpoint).
+- [x] "Send to queue" button: POSTs to `/api/v1/queue/playlists`, shows toast.
 
 ### 3.10 Tests
-- [ ] Unit: scheduler logic (already in 3.3).
+- [x] Unit: scheduler logic (already in 3.3).
 - [ ] Functional: end-to-end queue submission against a fake Liquidsoap that records pushed URIs; assert round-robin order with multiple submissions.
 - [ ] Integration: real Liquidsoap configured with a file sink instead of Icecast; submit a 3-track playlist, assert audio file contains 3 distinct tracks.
 - [ ] Frontend: drag-and-drop works in Vitest with @testing-library + dnd-kit test utilities.

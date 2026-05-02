@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useUserStore } from "./stores/userStore";
 import PlayerPage from "./pages/PlayerPage";
 import CreatePage from "./pages/CreatePage";
 import AdminPage from "./pages/AdminPage";
@@ -53,6 +54,29 @@ function HealthIndicator() {
   );
 }
 
+function UserIdentity() {
+  const label = useUserStore((s) => s.label);
+  const reroll = useUserStore((s) => s.reroll);
+
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: "0.5rem",
+        fontSize: "0.75rem",
+        color: "#888",
+        cursor: "pointer",
+      }}
+      onClick={reroll}
+      title="Click to get a new name"
+    >
+      🎧 {label}
+      <span style={{ fontSize: "0.625rem", opacity: 0.5 }}>↻</span>
+    </span>
+  );
+}
+
 function NavLayout() {
   return (
     <div style={{ position: "fixed", bottom: "1rem", right: "1rem", zIndex: 100 }}>
@@ -71,6 +95,7 @@ function App() {
           <Route path="/admin" element={<AdminPage />} />
         </Routes>
         <NavLayout />
+        <UserIdentity />
       </BrowserRouter>
     </QueryClientProvider>
   );

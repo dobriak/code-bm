@@ -30,7 +30,7 @@ describe("formatDuration", () => {
   });
 
   it("handles undefined", () => {
-    expect(formatDuration(undefined)).toBe("");
+    expect(formatDuration(null)).toBe("");
   });
 
   it("formats long tracks", () => {

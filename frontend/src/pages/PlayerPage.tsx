@@ -1,11 +1,11 @@
 /**
- * Player page — shows audio player and now-playing.
+ * Player page — full-bleed album art, now-playing, controls.
  */
-import PlayerAudio from "../components/PlayerAudio";
+import NowPlaying from "../components/NowPlaying";
 
 export default function PlayerPage() {
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#0f0f0f", color: "#fafafa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "2rem" }}>
+    <div style={{ minHeight: "100vh", backgroundColor: "#0f0f0f", color: "#fafafa" }}>
       <nav
         style={{
           position: "absolute",
@@ -17,6 +17,7 @@ export default function PlayerPage() {
           gap: "1.5rem",
           padding: "0.75rem 1.5rem",
           borderBottom: "1px solid #1a1a1a",
+          zIndex: 50,
         }}
       >
         <a href="/" style={{ color: "#fafafa", textDecoration: "none", fontWeight: 700, fontSize: "1.125rem" }}>
@@ -33,11 +34,7 @@ export default function PlayerPage() {
         </a>
       </nav>
 
-      <h1 style={{ fontSize: "3rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
-        Raidio
-      </h1>
-
-      <PlayerAudio />
+      <NowPlaying />
     </div>
   );
 }

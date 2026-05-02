@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createScanWebSocket, fetchScanStatus, ScanProgress, ScanStatus, startScan } from "../api/client";
+import type { ScanProgress, ScanStatus } from "../api/client";
+import { createScanWebSocket, fetchScanStatus, startScan } from "../api/client";
 
 /**
  * AdminScanPanel — minimal scan UI for Phase 2.

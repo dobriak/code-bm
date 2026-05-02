@@ -84,7 +84,67 @@ export interface TracksQuery {
   limit?: number;
 }
 
+// ── Now-playing types ────────────────────────────────────────────
+
+export interface QueueTrack {
+  id: number;
+  track_id: number | null;
+  jingle_id: number | null;
+  artist: string | null;
+  title: string | null;
+  album: string | null;
+  duration_ms: number | null;
+  cover_art_path: string | null;
+  state: string;
+  started_at: string | null;
+  ended_at: string | null;
+  owner_label: string | null;
+}
+
+export interface NowPlayingData {
+  current: QueueTrack | null;
+  prev: QueueTrack[];
+  next: QueueTrack[];
+  buffer_offset_ms: number;
+}
+
+// ── Playlist submission types ─────────────────────────────────────
+
+export interface PlaylistItemCreate {
+  track_id: number | null;
+  jingle_id: number | null;
+  overlay_at_ms: number | null;
+}
+
+export interface PlaylistCreateRequest {
+  name: string;
+  notes?: string;
+  items: PlaylistItemCreate[];
+  owner_label?: string;
+}
+
+export interface PlaylistCreateResponse {
+  id: number;
+  name: string;
+  notes: string | null;
+  owner_label: string | null;
+  estimated_time_to_play_ms: number | null;
+}
+
+// ── Random track type ────────────────────────────────────────────
+
+export interface RandomTrack {
+  id: number;
+  artist: string | null;
+  title: string | null;
+  album: string | null;
+  duration_ms: number | null;
+  cover_art_path: string | null;
+}
+
 const API_BASE = "/api/v1";
+
+// ── Track endpoints ──────────────────────────────────────────────
 
 export async function fetchTracks(params: TracksQuery = {}): Promise<PaginatedTracks> {
   const searchParams = new URLSearchParams();
@@ -110,6 +170,14 @@ export async function fetchTrack(id: number): Promise<TrackDetail> {
   return resp.json();
 }
 
+export async function fetchRandomTrack(): Promise<RandomTrack> {
+  const resp = await fetch(`${API_BASE}/tracks/random`);
+  if (!resp.ok) throw new Error(`Failed to fetch random track: ${resp.status}`);
+  return resp.json();
+}
+
+// ── Facet endpoints ──────────────────────────────────────────────
+
 export async function fetchArtists(): Promise<FacetItem[]> {
   const resp = await fetch(`${API_BASE}/artists`);
   if (!resp.ok) throw new Error("Failed to fetch artists");
@@ -128,11 +196,43 @@ export async function fetchGenres(): Promise<FacetItem[]> {
   return resp.json();
 }
 
+// ── Jingles endpoint ─────────────────────────────────────────────
+
 export async function fetchJingles(): Promise<Jingle[]> {
   const resp = await fetch(`${API_BASE}/jingles`);
   if (!resp.ok) throw new Error("Failed to fetch jingles");
   return resp.json();
 }
+
+// ── Now-playing ──────────────────────────────────────────────────
+
+export async function fetchNowPlaying(): Promise<NowPlayingData> {
+  const resp = await fetch(`${API_BASE}/now-playing`);
+  if (!resp.ok) throw new Error("Failed to fetch now-playing");
+  return resp.json();
+}
+
+export function createNowPlayingWebSocket(): WebSocket {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return new WebSocket(`${protocol}//${window.location.host}/ws/now-playing`);
+}
+
+// ── Queue / Playlist submission ──────────────────────────────────
+
+export async function submitPlaylist(body: PlaylistCreateRequest): Promise<PlaylistCreateResponse> {
+  const resp = await fetch(`${API_BASE}/queue/playlists`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Raidio-User": body.owner_label || "" },
+    body: JSON.stringify(body),
+  });
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({}));
+    throw new Error(data.detail || `Failed to submit playlist: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+// ── Scan endpoints ───────────────────────────────────────────────
 
 export async function startScan(kind: "library" | "jingles"): Promise<ScanResponse> {
   const resp = await fetch(`${API_BASE}/admin/scan/${kind}`, { method: "POST" });

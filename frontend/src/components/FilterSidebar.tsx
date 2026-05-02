@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useGenres, useArtists, useAlbums } from "../api/hooks";
-import { FacetItem } from "../api/client";
+import type { FacetItem } from "../api/client";
 
 interface FilterSidebarProps {
   selectedGenre: string | null;
