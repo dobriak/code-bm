@@ -54,7 +54,7 @@ async def run_library_scan(
     await session.flush()
 
     try:
-        files = scan_library(library_path)
+        files = await scan_library(library_path)
         # total files scanned
         added = 0
         updated = 0

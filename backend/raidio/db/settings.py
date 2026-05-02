@@ -47,3 +47,14 @@ class Settings(BaseSettings):
     icecast_port: int = 8000
     icecast_mount: str = "/raidio.mp3"
     icecast_source_password: str = "hackme"
+
+
+_settings_instance: Settings | None = None
+
+
+def get_settings() -> Settings:
+    """Get the cached Settings singleton (reads .env only once)."""
+    global _settings_instance
+    if _settings_instance is None:
+        _settings_instance = Settings()
+    return _settings_instance

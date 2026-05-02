@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-from raidio.db.settings import Settings
-
 # Test constants (must match conftest.py patched values)
 TEST_JWT_SECRET = "test-secret-key"
 TEST_ADMIN_EMAIL = "admin@test.com"
@@ -15,77 +13,32 @@ TEST_ADMIN_PASSWORD_HASH = "$2b$12$EkJqXUlEq1fRCA6oIdiqv.xb/ZDwYGX/3em/XMT6fcxg3
 class TestAdminLoginEndpoint:
     """Tests for POST /api/v1/admin/login."""
 
-    async def test_login_success(self, client, tmp_path):
+    async def test_login_success(self, client):
         """Returns access_token for valid credentials."""
-        # Patch the admin login module to use our test settings
-
-        test_settings = Settings(
-            admin_email=TEST_ADMIN_EMAIL,
-            admin_password_hash=TEST_ADMIN_PASSWORD_HASH,
-            jwt_secret=TEST_JWT_SECRET,
-            database_path=str(tmp_path / "test.db"),
+        resp = await client.post(
+            "/api/v1/admin/login",
+            json={"email": TEST_ADMIN_EMAIL, "password": "password123"},
         )
-        # Patch in the admin module where Settings() is called
-        import raidio.api.admin as admin_mod
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
 
-        original = admin_mod.Settings
-        admin_mod.Settings = lambda: test_settings
-
-        try:
-            resp = await client.post(
-                "/api/v1/admin/login",
-                json={"email": TEST_ADMIN_EMAIL, "password": "password123"},
-            )
-            assert resp.status_code == 200
-            data = resp.json()
-            assert "access_token" in data
-            assert data["token_type"] == "bearer"
-        finally:
-            admin_mod.Settings = original
-
-    async def test_login_wrong_password(self, client, tmp_path):
+    async def test_login_wrong_password(self, client):
         """Returns 401 for wrong password."""
-        import raidio.api.admin as admin_mod
-
-        test_settings = Settings(
-            admin_email=TEST_ADMIN_EMAIL,
-            admin_password_hash=TEST_ADMIN_PASSWORD_HASH,
-            jwt_secret=TEST_JWT_SECRET,
-            database_path=str(tmp_path / "test.db"),
+        resp = await client.post(
+            "/api/v1/admin/login",
+            json={"email": TEST_ADMIN_EMAIL, "password": "wrongpassword"},
         )
-        original = admin_mod.Settings
-        admin_mod.Settings = lambda: test_settings
+        assert resp.status_code == 401
 
-        try:
-            resp = await client.post(
-                "/api/v1/admin/login",
-                json={"email": TEST_ADMIN_EMAIL, "password": "wrongpassword"},
-            )
-            assert resp.status_code == 401
-        finally:
-            admin_mod.Settings = original
-
-    async def test_login_wrong_email(self, client, tmp_path):
+    async def test_login_wrong_email(self, client):
         """Returns 401 for wrong email."""
-        import raidio.api.admin as admin_mod
-
-        test_settings = Settings(
-            admin_email=TEST_ADMIN_EMAIL,
-            admin_password_hash=TEST_ADMIN_PASSWORD_HASH,
-            jwt_secret=TEST_JWT_SECRET,
-            database_path=str(tmp_path / "test.db"),
+        resp = await client.post(
+            "/api/v1/admin/login",
+            json={"email": "wrong@test.com", "password": "password123"},
         )
-        original = admin_mod.Settings
-        admin_mod.Settings = lambda: test_settings
-
-        try:
-            resp = await client.post(
-                "/api/v1/admin/login",
-                json={"email": "wrong@test.com", "password": "password123"},
-            )
-            assert resp.status_code == 401
-        finally:
-            admin_mod.Settings = original
+        assert resp.status_code == 401
 
 
 class TestAdminEndpointsRequireAuth:

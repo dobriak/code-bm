@@ -23,7 +23,6 @@ from raidio.db.models import (
     Setting,
     Track,
 )
-from raidio.db.settings import Settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["queue"])
@@ -81,8 +80,7 @@ class NowPlayingResponse(BaseModel):
 def _get_session():
     from raidio.db.session import get_session_factory
 
-    settings = Settings()
-    return get_session_factory(settings=settings)
+    return get_session_factory()
 
 
 def _info_to_schema(info: QueueTrackInfo) -> QueueTrackSchema:

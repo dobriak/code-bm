@@ -16,7 +16,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from pydantic import BaseModel
 
-from raidio.db.settings import Settings
+from raidio.db.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -124,5 +124,5 @@ async def require_admin(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    settings = Settings()
+    settings = get_settings()
     return decode_access_token(credentials.credentials, settings.jwt_secret)

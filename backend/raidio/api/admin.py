@@ -38,7 +38,7 @@ from raidio.db.models import (
     Track,
 )
 from raidio.db.session import get_session_factory
-from raidio.db.settings import Settings
+from raidio.db.settings import get_settings
 from raidio.scanner.audio_analysis import AnalysisWorkerPool
 
 logger = logging.getLogger(__name__)
@@ -52,9 +52,9 @@ def get_analysis_pool() -> AnalysisWorkerPool:
     """Get or create the singleton analysis worker pool."""
     global _analysis_pool
     if _analysis_pool is None:
-        settings = Settings()
+        settings = get_settings()
         _analysis_pool = AnalysisWorkerPool(
-            session_factory=get_session_factory(settings=settings),
+            session_factory=get_session_factory(),
             min_quiet_duration_s=settings.min_quiet_duration_s
             if hasattr(settings, "min_quiet_duration_s")
             else 2.0,
@@ -71,7 +71,7 @@ async def admin_login(body: LoginRequest):
 
     Generic error message on failure (no info about which field is wrong).
     """
-    settings = Settings()
+    settings = get_settings()
 
     if body.email != settings.admin_email:
         raise HTTPException(
@@ -190,7 +190,7 @@ class SettingsUpdate(BaseModel):
 
 
 @router.get("/settings", response_model=SettingsResponse)
-async def get_settings(admin_email: Annotated[str, Depends(require_admin)]):
+async def read_settings(admin_email: Annotated[str, Depends(require_admin)]):
     """Get current admin settings."""
     factory = get_session_factory()
     async with factory() as session:

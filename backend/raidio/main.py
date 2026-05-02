@@ -13,7 +13,7 @@ from raidio.api.admin import router as admin_router
 from raidio.api.catalog import router as catalog_router
 from raidio.api.queue import router as queue_router
 from raidio.api.scan import router as scan_router
-from raidio.db.settings import Settings
+from raidio.db.settings import get_settings
 from raidio.streaming.broadcaster import Broadcaster
 from raidio.streaming.liquidsoap import LiquidsoapClient, LiquidsoapError
 
@@ -28,7 +28,7 @@ async def lifespan(app: FastAPI):
 
     run_migrations()
 
-    settings = Settings()
+    settings = get_settings()
 
     # Bootstrap default settings row
     session_factory = get_session_factory(settings=settings)

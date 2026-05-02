@@ -14,7 +14,6 @@ from sqlalchemy import func, select, text
 
 from raidio.db.fts import fts_query
 from raidio.db.models import Jingle, Track
-from raidio.db.settings import Settings
 
 router = APIRouter(prefix="/api/v1", tags=["catalog"])
 
@@ -72,9 +71,7 @@ class JingleBrief(BaseModel):
 def _get_session():
     from raidio.db.session import get_session_factory
 
-    settings = Settings()
-    factory = get_session_factory(settings=settings)
-    return factory
+    return get_session_factory()
 
 
 # ── Track endpoints ────────────────────────────────────────────────

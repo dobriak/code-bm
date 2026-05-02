@@ -17,7 +17,7 @@ from sqlalchemy import select
 from raidio.core.auth import require_admin
 from raidio.db.models import AnalysisStatus, ScanJob, ScanKind, ScanStatus, Track
 from raidio.db.session import get_session_factory
-from raidio.db.settings import Settings
+from raidio.db.settings import get_settings
 from raidio.scanner.library_scanner import run_library_scan
 
 logger = logging.getLogger(__name__)
@@ -53,8 +53,8 @@ async def _run_scan_background(
 
     After Phase A completes, enqueues changed tracks for Phase B analysis.
     """
-    settings = Settings()
-    session_factory = get_session_factory(settings=settings)
+    settings = get_settings()
+    session_factory = get_session_factory()
     async with session_factory() as session:
         try:
             # Remember which tracks were already analyzed before scan
@@ -127,9 +127,9 @@ async def scan_library(
     admin_email: Annotated[str, Depends(require_admin)],
 ):
     """Kick off a library scan (Phase A). Returns scan_job_id."""
-    settings = Settings()
+    settings = get_settings()
 
-    session_factory = get_session_factory(settings=settings)
+    session_factory = get_session_factory()
     async with session_factory() as session:
         job = ScanJob(
             kind=ScanKind.LIBRARY,
@@ -165,9 +165,9 @@ async def scan_jingles(
     admin_email: Annotated[str, Depends(require_admin)],
 ):
     """Kick off a jingles directory scan. Returns scan_job_id."""
-    settings = Settings()
+    settings = get_settings()
 
-    session_factory = get_session_factory(settings=settings)
+    session_factory = get_session_factory()
     async with session_factory() as session:
         job = ScanJob(
             kind=ScanKind.JINGLES,
@@ -200,8 +200,8 @@ async def scan_jingles(
 @router.get("/status")
 async def scan_status(admin_email: Annotated[str, Depends(require_admin)]):
     """Return the most recent scan jobs."""
-    settings = Settings()
-    session_factory = get_session_factory(settings=settings)
+    settings = get_settings()
+    session_factory = get_session_factory()
     async with session_factory() as session:
         result = await session.execute(
             select(ScanJob).order_by(ScanJob.started_at.desc()).limit(10)
@@ -240,7 +240,7 @@ async def scan_websocket(websocket: WebSocket):
             await websocket.close(code=4001)
             return
 
-        settings = Settings()
+        settings = get_settings()
         from raidio.core.auth import decode_access_token
 
         try:

@@ -41,26 +41,21 @@ def _make_test_settings(tmp_path: Path) -> Settings:
 
 @pytest.fixture(autouse=True)
 def _patch_settings(tmp_path, monkeypatch):
-    """Patch Settings in all modules to use test database and JWT secret.
+    """Patch settings singleton and reset caches so all tests use test database.
 
-    This runs for every test so that routes using Settings() get test values.
+    Patches _settings_instance in the settings module so that every
+    get_settings() caller (regardless of which module imported it)
+    receives the same test Settings instance.
     """
     test_settings = _make_test_settings(tmp_path)
 
-    # Patch the Settings class in every module that imports it
-    modules_to_patch = [
-        "raidio.api.admin",
-        "raidio.api.catalog",
-        "raidio.api.queue",
-        "raidio.api.scan",
-        "raidio.core.auth",
-        "raidio.db.session",
-    ]
-    for module_name in modules_to_patch:
-        monkeypatch.setattr(
-            f"{module_name}.Settings",
-            lambda: test_settings,
-        )
+    # Patch the cached settings singleton — all get_settings() callers see test values
+    import raidio.db.settings as _settings_module
+    monkeypatch.setattr(_settings_module, "_settings_instance", test_settings)
+
+    # Reset session/engine cache so fresh instances are created per test
+    from raidio.db.session import reset_session_cache
+    reset_session_cache()
 
 
 @pytest.fixture
