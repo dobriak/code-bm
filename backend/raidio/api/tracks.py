@@ -1,8 +1,9 @@
 from collections.abc import AsyncGenerator
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -249,3 +250,59 @@ async def random_track(
     if not track:
         raise HTTPException(status_code=404, detail="No tracks found")
     return _track_to_dict(track)
+
+
+class ResolvePathsRequest(BaseModel):
+    items: list[dict[str, Any]]
+
+
+class ResolvedItem(BaseModel):
+    path: str
+    type: Literal["track", "jingle"]
+    id: int
+    title: str | None = None
+    duration_ms: int | None = None
+
+
+@router.post("/tracks/resolve-paths")
+async def resolve_paths(
+    body: ResolvePathsRequest,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    paths_by_type: dict[str, set[str]] = {"track": set(), "jingle": set()}
+    for item in body.items:
+        if (path := item.get("path")) and item.get("type") in ("track", "jingle"):
+            paths_by_type[item["type"]].add(path)
+
+    resolved: list[ResolvedItem] = []
+    missing: list[str] = []
+
+    if paths_by_type["track"]:
+        result = await db.execute(select(Track).where(Track.path.in_(paths_by_type["track"])))
+        for track in result.scalars().all():
+            resolved.append(ResolvedItem(
+                path=track.path,
+                type="track",
+                id=track.id,
+                title=track.title,
+                duration_ms=track.duration_ms,
+            ))
+
+    if paths_by_type["jingle"]:
+        result = await db.execute(select(Jingle).where(Jingle.path.in_(paths_by_type["jingle"])))
+        for jingle in result.scalars().all():
+            resolved.append(ResolvedItem(
+                path=jingle.path,
+                type="jingle",
+                id=jingle.id,
+                title=jingle.title,
+                duration_ms=jingle.duration_ms,
+            ))
+
+    found_paths = {r.path for r in resolved}
+    for item in body.items:
+        if (path := item.get("path")) and item.get("type") in ("track", "jingle"):
+            if path not in found_paths:
+                missing.append(path)
+
+    return {"resolved": [r.model_dump() for r in resolved], "missing": missing}

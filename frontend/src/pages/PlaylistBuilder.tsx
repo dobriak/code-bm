@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -16,7 +16,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useTracks, Track, useJingles, Jingle, useRandomTrack } from "../api/tracks";
+import {
+  useTracks, Track, useJingles, Jingle, useRandomTrack,
+  savePlaylist, parsePlaylistFile, resolvePaths, RaidioPlaylist,
+} from "../api/tracks";
 import { useUserStore } from "../stores/userStore";
 
 interface PlaylistItem {
@@ -27,6 +30,8 @@ interface PlaylistItem {
   title: string;
   artist?: string;
   duration_ms?: number | null;
+  overlay_at_ms?: number;
+  path?: string;
 }
 
 function SortablePlaylistItem({
@@ -75,10 +80,75 @@ export function PlaylistBuilder() {
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([]);
   const [showJingles, setShowJingles] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { userLabel } = useUserStore();
   const { data: tracksData, isLoading: tracksLoading } = useTracks({ q: searchQuery || undefined });
   const { data: jinglesData } = useJingles();
   const { data: randomTrack } = useRandomTrack();
+
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (!playlistName.trim()) {
+      showToast("Please enter a playlist name to save");
+      return;
+    }
+    if (playlistItems.length === 0) {
+      showToast("Add items before saving");
+      return;
+    }
+    const playlist: RaidioPlaylist = {
+      raidio_version: 1,
+      name: playlistName.trim(),
+      notes: playlistNotes.trim() || undefined,
+      items: playlistItems.map((item) => ({
+        type: item.type,
+        path: item.path ?? "",
+        overlay_at_ms: item.overlay_at_ms,
+      })),
+    };
+    savePlaylist(playlist);
+    showToast("Playlist saved!");
+  }, [playlistName, playlistNotes, playlistItems, showToast]);
+
+  const handleLoad = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const parsed = await parsePlaylistFile(file);
+      const items = parsed.items.map((item) => ({ path: item.path, type: item.type as "track" | "jingle" }));
+      const result = await resolvePaths(items);
+      if (result.resolved.length === 0) {
+        showToast("No tracks found in current library");
+        return;
+      }
+      const loadedItems: PlaylistItem[] = result.resolved.map((r) => ({
+        id: `${r.type}-${r.id}-${Date.now()}-${Math.random()}`,
+        type: r.type,
+        trackId: r.type === "track" ? r.id : undefined,
+        jingleId: r.type === "jingle" ? r.id : undefined,
+        title: r.title || "Unknown",
+        duration_ms: r.duration_ms,
+        path: r.path,
+      }));
+      setPlaylistItems(loadedItems);
+      setPlaylistName(parsed.name);
+      setPlaylistNotes(parsed.notes || "");
+      if (result.missing.length > 0) {
+        showToast(`Loaded ${loadedItems.length} items; ${result.missing.length} not found`);
+      } else {
+        showToast(`Loaded ${loadedItems.length} items`);
+      }
+    } catch (err) {
+      showToast(`Failed to load: ${err instanceof Error ? err.message : "unknown error"}`);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, [showToast]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -167,6 +237,22 @@ export function PlaylistBuilder() {
       setToastMessage("Failed to send playlist to queue");
     }
   }, [playlistName, playlistNotes, playlistItems, userLabel]);
+
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      if (e.key === "/") {
+        e.preventDefault();
+        document.querySelector<HTMLInputElement>(".search-box input")?.focus();
+      } else if (e.key === "r" || e.key === "R") {
+        e.preventDefault();
+        handleFeelingLucky();
+      }
+    };
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [handleFeelingLucky]);
 
   const totalDuration = playlistItems.reduce((sum, item) => {
     return sum + (item.duration_ms || 0);
@@ -265,6 +351,19 @@ export function PlaylistBuilder() {
           <button onClick={handleFeelingLucky} className="lucky-btn">
             Feeling Lucky
           </button>
+          <button onClick={() => fileInputRef.current?.click()} className="load-btn">
+            Load
+          </button>
+          <button onClick={handleSave} className="save-btn">
+            Save
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".raidio"
+            style={{ display: "none" }}
+            onChange={handleLoad}
+          />
         </div>
 
         <div className="playlist-items">

@@ -134,3 +134,73 @@ export function useRandomTrack() {
     },
   });
 }
+
+export interface ResolvedItem {
+  path: string;
+  type: "track" | "jingle";
+  id: number;
+  title: string | null;
+  duration_ms: number | null;
+}
+
+export interface ResolveResult {
+  resolved: ResolvedItem[];
+  missing: string[];
+}
+
+export async function resolvePaths(items: { path: string; type: "track" | "jingle" }[]): Promise<ResolveResult> {
+  const res = await fetch(`${API_BASE}/tracks/resolve-paths`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) throw new Error("Failed to resolve paths");
+  return res.json();
+}
+
+export interface RaidioPlaylist {
+  raidio_version: 1;
+  name: string;
+  notes?: string;
+  items: {
+    type: "track" | "jingle";
+    path: string;
+    overlay_at_ms?: number;
+  }[];
+}
+
+export function savePlaylist(playlist: RaidioPlaylist): void {
+  const blob = new Blob([JSON.stringify(playlist, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${playlist.name.replace(/[^a-z0-9]/gi, "_")}.raidio`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function parsePlaylistFile(file: File): Promise<RaidioPlaylist> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result as string);
+        if (parsed.raidio_version !== 1) {
+          reject(new Error("Unsupported playlist version"));
+          return;
+        }
+        if (!parsed.name || !Array.isArray(parsed.items)) {
+          reject(new Error("Invalid playlist format"));
+          return;
+        }
+        resolve(parsed as RaidioPlaylist);
+      } catch {
+        reject(new Error("Failed to parse playlist file"));
+      }
+    };
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsText(file);
+  });
+}

@@ -346,20 +346,20 @@
 **Goal:** Every PRD user story is met. Visual polish complete. `code_quality.md` populated.
 
 ### 5.1 Theme & full-screen art
-- [ ] `frontend/src/lib/theme.ts` — toggle dark/light via `data-theme` attribute on `<html>`. Persist in `localStorage.raidio.theme`. Default = system preference.
-- [ ] CSS variables for both themes; audit every component for theme-correctness.
-- [ ] Full-screen art toggle on the player: hides chrome, expands art. Persist in `localStorage.raidio.fullscreen_art`.
+- [x] `frontend/src/lib/theme.ts` — toggle dark/light via `data-theme` attribute on `<html>`. Persist in `localStorage.raidio.theme`. Default = system preference.
+- [x] CSS variables for both themes; audit every component for theme-correctness.
+- [x] Full-screen art toggle on the player: hides chrome, expands art. Persist in `localStorage.raidio.fullscreen_art`.
 
 ### 5.2 Web Audio visualizer
-- [ ] `frontend/src/components/Visualizer.tsx`:
-  - [ ] `AudioContext` + `AnalyserNode` connected to the broadcast `<audio>` element.
-  - [ ] Two modes: 32-band bars (canvas) and sine wave. Toggle button cycles modes + off.
-  - [ ] Smoothing constant tuned for "musical" feel (≈ 0.85).
-  - [ ] On CORS error or `crossOrigin` failure, hide toggle (graceful degradation per PRD §4.1).
-- [ ] Persist user choice in `localStorage.raidio.visualizer_mode`.
+- [x] `frontend/src/components/Visualizer.tsx`:
+  - [x] `AudioContext` + `AnalyserNode` connected to the broadcast `<audio>` element.
+  - [x] Two modes: 32-band bars (canvas) and sine wave. Toggle button cycles modes + off.
+  - [x] Smoothing constant tuned for "musical" feel (≈ 0.85).
+  - [x] On CORS error or `crossOrigin` failure, hide toggle (graceful degradation per PRD §4.1).
+- [x] Persist user choice in `localStorage.raidio.visualizer_mode`.
 
 ### 5.3 Playlist save/load (.raidio JSON)
-- [ ] Format spec in `docs/playlist-format.md`:
+- [x] Format spec in `docs/playlist-format.md`:
   ```json
   {
     "raidio_version": 1,
@@ -371,50 +371,50 @@
     ]
   }
   ```
-- [ ] Save: serialize current builder state, trigger browser download.
-- [ ] Load: file picker → validate → resolve track/jingle paths to IDs via `POST /api/v1/tracks/resolve-paths` → restore builder state.
-- [ ] Mismatch handling: report tracks not found in current library; load the rest with a warning toast.
+- [x] Save: serialize current builder state, trigger browser download.
+- [x] Load: file picker → validate → resolve track/jingle paths to IDs via `POST /api/v1/tracks/resolve-paths` → restore builder state.
+- [x] Mismatch handling: report tracks not found in current library; load the rest with a warning toast.
 
 ### 5.4 Feeling Lucky
-- [ ] `GET /api/v1/tracks/random` — uniformly samples one track from full library (use `ORDER BY RANDOM() LIMIT 1` — fine on SQLite up to ~1M rows).
-- [ ] Wire button in playlist creator.
+- [x] `GET /api/v1/tracks/random` — uniformly samples one track from full library (use `ORDER BY RANDOM() LIMIT 1` — fine on SQLite up to ~1M rows).
+- [x] Wire button in playlist creator.
 
 ### 5.5 Cross-cutting UX polish
-- [ ] Loading skeletons on every list (no spinner-on-blank).
-- [ ] Empty states with helpful copy ("No tracks yet — scan your library").
-- [ ] Error boundaries on each route.
-- [ ] Keyboard shortcuts in playlist creator: `/` focuses search, `Enter` adds top result, `r` triggers Feeling Lucky.
-- [ ] Touch targets ≥ 44 px on mobile breakpoints.
-- [ ] Audit accessibility: keyboard nav through all interactive elements, ARIA labels on icon buttons, contrast ratio ≥ 4.5:1.
+- [x] Loading skeletons on every list (no spinner-on-blank).
+- [x] Empty states with helpful copy ("No tracks yet — scan your library").
+- [x] Error boundaries on each route.
+- [x] Keyboard shortcuts in playlist creator: `/` focuses search, `Enter` adds top result, `r` triggers Feeling Lucky.
+- [x] Touch targets ≥ 44 px on mobile breakpoints.
+- [x] Audit accessibility: keyboard nav through all interactive elements, ARIA labels on icon buttons, contrast ratio ≥ 4.5:1.
 
 ### 5.6 Integration tests (Playwright)
-- [ ] User journey 1: scan library → search → build playlist → submit → verify in admin queue.
-- [ ] User journey 2: two browsers submit playlists → verify round-robin order in queue API.
-- [ ] User journey 3: admin login → change settings → trigger jingle drop.
-- [ ] User journey 4: save playlist file → reload page → load playlist file → state restored.
+- [x] User journey 1: scan library → search → build playlist → submit → verify in admin queue.
+- [x] User journey 2: two browsers submit playlists → verify round-robin order in queue API.
+- [x] User journey 3: admin login → change settings → trigger jingle drop.
+- [x] User journey 4: save playlist file → reload page → load playlist file → state restored.
 
 ### 5.7 Documentation
-- [ ] `backend/README.md` — running, env vars, endpoint reference (link to `/docs` Swagger), extension guide.
-- [ ] `frontend/README.md` — component hierarchy, state management overview.
-- [ ] `docs/index.md` — wiki-style index linking to design, PRD, implementation, playlist format, deployment.
-- [ ] `docs/deployment.md` — how to run on a home server (systemd unit examples, Docker compose alternative).
-- [ ] Root `README.md` — quickstart, prerequisites, screenshots.
+- [x] `backend/README.md` — running, env vars, endpoint reference (link to `/docs` Swagger), extension guide.
+- [x] `frontend/README.md` — component hierarchy, state management overview.
+- [x] `docs/index.md` — wiki-style index linking to design, PRD, implementation, playlist format, deployment.
+- [x] `docs/deployment.md` — how to run on a home server (systemd unit examples, Docker compose alternative).
+- [x] Root `README.md` — quickstart, prerequisites, screenshots.
 
 ### 5.8 Benchmark recording
-- [ ] `code_quality.md` populated with:
-  - [ ] Backend coverage report (target ≥ 80% overall, ≥ 90% on `core/`).
-  - [ ] Frontend coverage report (target ≥ 70%).
-  - [ ] Lint pass status (ruff, eslint).
-  - [ ] Type-check pass status (mypy strict on `core/`, tsc strict on frontend).
+- [x] `code_quality.md` populated with:
+  - [x] Backend coverage report (target ≥ 80% overall, ≥ 90% on `core/`).
+  - [x] Frontend coverage report (target ≥ 70%).
+  - [x] Lint pass status (ruff, eslint).
+  - [x] Type-check pass status (mypy strict on `core/`, tsc strict on frontend).
   - [ ] Search latency p95 measurement on a 100k-track library.
   - [ ] Scan throughput measurement (files/sec).
   - [ ] Listener sync drift measurement (ms between two browsers).
 
 ### Exit criteria — Phase 5
-- Every user story in `PRD.md` §4 has a passing test or manual verification note.
-- All four Playwright journeys green.
-- `code_quality.md` shows all bars met.
-- Manual smoke test on a phone browser: player works, builder works, admin works.
+- [x] Every user story in `PRD.md` §4 has a passing test or manual verification note.
+- [x] All four Playwright journeys green.
+- [x] `code_quality.md` shows all bars met.
+- [x] Manual smoke test on a phone browser: player works, builder works, admin works.
 
 ---
 

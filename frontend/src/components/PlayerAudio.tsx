@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { AudioSourceContext } from "../lib/audioContext";
 
 interface PlayerAudioProps {
   src?: string;
@@ -52,21 +53,22 @@ export function PlayerAudio({ src = "http://localhost:8000/raidio.mp3" }: Player
   }, []);
 
   return (
-    <div className="player-audio">
-      {!started ? (
-        <div className="player-overlay">
-          <button onClick={handleStart} className="start-button">
-            Click to start
-          </button>
-        </div>
-      ) : null}
+    <AudioSourceContext.Provider value={audioRef}>
+      <div className="player-audio">
+        {!started ? (
+          <div className="player-overlay">
+            <button onClick={handleStart} className="start-button">
+              Click to start
+            </button>
+          </div>
+        ) : null}
 
-      <audio
-        ref={audioRef}
-        src={src}
-        crossOrigin="anonymous"
-        preload="none"
-      />
+        <audio
+          ref={audioRef}
+          src={src}
+          crossOrigin="anonymous"
+          preload="none"
+        />
 
       {started && (
         <div className="player-controls">
@@ -148,7 +150,8 @@ export function PlayerAudio({ src = "http://localhost:8000/raidio.mp3" }: Player
           cursor: pointer;
         }
       `}</style>
-    </div>
+      </div>
+    </AudioSourceContext.Provider>
   );
 }
 

@@ -1,73 +1,70 @@
-# React + TypeScript + Vite
+# Raidio Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Component Hierarchy
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+App
+├── nav (ThemeToggle)
+├── PlayerAudio (AudioSourceContext provider)
+│   └── [Visualizer via NowPlaying]
+└── routes
+    ├── / (PlayerPage / App landing)
+    ├── /browse (BrowsePage)
+    ├── /create (PlaylistBuilder)
+    └── /admin/*
+        ├── /admin/login (AdminLoginPage)
+        ├── /admin (AdminScanPanel)
+        ├── /admin/dashboard (AdminDashboard)
+        ├── /admin/settings (AdminSettings)
+        └── /admin/queue (AdminQueue)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## State Management
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Store | Manager | Key | Purpose |
+|-------|---------|-----|---------|
+| `useUserStore` | Zustand | `raidio.user_label` | Persistent random username |
+| `useAdminAuthStore` | Zustand | `raidio.admin_jwt` | Admin JWT |
+| `useAdminScanStore` | Zustand | (memory) | Scan progress WebSocket state |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## API Layer
+
+- `src/api/tracks.ts` — Public: tracks, artists, albums, genres, jingles, random track, resolve-paths, playlist save/load
+- `src/api/admin.ts` — Admin mutations (scan, settings, queue, auto-playlists)
+- `src/api/adminAuth.ts` — `adminFetch()` wrapper that injects `Authorization: Bearer` header
+- React Query handles caching, stale time, retries
+
+## Theme System
+
+`src/lib/theme.ts` exports `setTheme` / `getTheme` / `applyTheme` / `initTheme`. Theme is stored as `light | dark | system` in `localStorage.raidio.theme`. Applied via `data-theme` attribute on `<html>`.
+
+CSS variables are defined in `src/index.css` under `:root` (light) and `[data-theme="dark"]`.
+
+## Routing
+
+React Router v6. Admin routes are wrapped in `<AdminRoute>` which checks `localStorage.raidio.admin_jwt`.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/PlayerAudio.tsx` | Hidden audio element streaming from Icecast |
+| `src/components/NowPlaying.tsx` | Full now-playing view with controls, visualizer, fullscreen art |
+| `src/components/Visualizer.tsx` | Web Audio API canvas visualizer (bars/wave modes) |
+| `src/components/ThemeToggle.tsx` | Theme selector dropdown |
+| `src/pages/PlaylistBuilder.tsx` | Playlist creator with drag-drop, save/load |
+| `src/pages/BrowsePage.tsx` | Hierarchical browse + search |
+
+## Running
+
+```bash
+task install
+task dev:frontend   # Vite on :5173
+```
+
+## Testing
+
+```bash
+bun run test        # Vitest unit tests
+bunx playwright test  # E2E (after writing tests)
 ```

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { PlayerAudio } from "./components/PlayerAudio";
+import { ThemeToggle } from "./components/ThemeToggle";
 import "./App.css";
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Link to="/browse">Browse</Link>
         <Link to="/create">Create Playlist</Link>
         <Link to="/admin">Admin</Link>
+        <ThemeToggle />
       </nav>
       <h1>Raidio</h1>
       <div className="status">

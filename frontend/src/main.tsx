@@ -1,8 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import './index.css'
+import { initTheme } from './lib/theme'
+import { AdminRoute } from './components/AdminRoute'
 import App from './App.tsx'
 import AdminScanPanel from './pages/AdminScanPanel.tsx'
 import AdminLoginPage from './pages/AdminLoginPage.tsx'
@@ -10,6 +12,9 @@ import AdminDashboard from './pages/AdminDashboard.tsx'
 import AdminSettings from './pages/AdminSettings.tsx'
 import AdminQueue from './pages/AdminQueue.tsx'
 import BrowsePage from './pages/BrowsePage.tsx'
+import PlaylistBuilder from './pages/PlaylistBuilder.tsx'
+
+initTheme()
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,14 +24,6 @@ const queryClient = new QueryClient({
     },
   },
 })
-
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem("raidio.admin_jwt")
-  if (!token) {
-    return <Navigate to="/admin/login" replace />
-  }
-  return <>{children}</>
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -56,7 +53,7 @@ createRoot(document.getElementById('root')!).render(
             </AdminRoute>
           } />
           <Route path="/browse" element={<BrowsePage />} />
-          <Route path="/create" element={<BrowsePage />} />
+          <Route path="/create" element={<PlaylistBuilder />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
