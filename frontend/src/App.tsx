@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { PlayerAudio } from "./components/PlayerAudio";
 import "./App.css";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           <span className="ok">Backend ok ({data?.version})</span>
         )}
       </div>
+      <PlayerAudio />
     </div>
   );
 }

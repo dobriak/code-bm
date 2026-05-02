@@ -22,12 +22,20 @@ tasks:
     cmd: bun run dev
 
   dev:liquidsoap:
-    desc: Placeholder for Liquidsoap
-    cmd: echo "not implemented yet"
+    desc: Run Liquidsoap audio engine
+    dir: ./liquidsoap
+    env:
+      ICECAST_HOST: "127.0.0.1"
+      ICECAST_PORT: "8000"
+      ICECAST_MOUNT: "/raidio.mp3"
+      ICECAST_SOURCE_PASSWORD: "${ICECAST_SOURCE_PASSWORD:-hackme}"
+      LIQUIDSOAP_TELNET_PORT: "1234"
+    cmd: liquidsoap raidio.liq
 
   dev:icecast:
-    desc: Placeholder for Icecast
-    cmd: echo "not implemented yet"
+    desc: Run Icecast on :8000
+    dir: ./liquidsoap
+    cmd: icecast -c icecast.xml
 
   dev:
     desc: Run all dev servers in parallel
