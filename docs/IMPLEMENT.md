@@ -77,35 +77,35 @@
 **Goal:** A hardcoded MP3 file plays from Liquidsoap → Icecast → browser. No database, no scheduler. Proves the streaming chain works.
 
 ### 1.1 Icecast setup
-- [ ] Add `liquidsoap/icecast.xml` template with: source password from env, mount `/raidio.mp3`, port 8000, permissive CORS (`Access-Control-Allow-Origin: *`).
-- [ ] Add `Taskfile` task `dev:icecast` that runs `icecast -c liquidsoap/icecast.xml`.
-- [ ] Document Icecast install in root `README.md` (apt/brew/Docker).
+- [x] Add `liquidsoap/icecast.xml` template with: source password from env, mount `/raidio.mp3`, port 8000, permissive CORS (`Access-Control-Allow-Origin: *`).
+- [x] Add `Taskfile` task `dev:icecast` that runs `icecast -c liquidsoap/icecast.xml` (with envsubst for variable injection).
+- [x] Document Icecast install in root `README.md` (apt/brew/Docker).
 
 ### 1.2 Liquidsoap baseline script
-- [ ] `liquidsoap/raidio.liq` with: a `request.queue()` named `main`, a `single("test.mp3")` fallback, output to Icecast using env-injected source password and mount path.
-- [ ] `dev:liquidsoap` task runs `liquidsoap liquidsoap/raidio.liq` with env vars passed through.
-- [ ] Place a royalty-free test MP3 at `liquidsoap/test.mp3` (or document where to get one).
+- [x] `liquidsoap/raidio.liq` with: a `request.queue()` named `main`, a `single("test.mp3")` fallback, output to Icecast using env-injected source password and mount path.
+- [x] `dev:liquidsoap` task runs `liquidsoap liquidsoap/raidio.liq` with env vars passed through (via envsubst template).
+- [x] Place a royalty-free test MP3 at `liquidsoap/test.mp3` (generated 440Hz sine tone via ffmpeg).
 
 ### 1.3 Browser audio element
-- [ ] `frontend/src/components/PlayerAudio.tsx` — a hidden `<audio>` element with `src="http://localhost:8000/raidio.mp3"`, `crossOrigin="anonymous"`, `autoPlay`, plus a one-time "Click to start" overlay to satisfy autoplay policy.
-- [ ] Mount it in `App.tsx`.
-- [ ] Add a basic volume slider and pause/resume controls (operate on the local `<audio>` only — not the broadcast).
+- [x] `frontend/src/components/PlayerAudio.tsx` — a hidden `<audio>` element with `src="http://localhost:8000/raidio.mp3"`, `crossOrigin="anonymous"`, plus a one-time "Click to start" overlay to satisfy autoplay policy.
+- [x] Mount it in `App.tsx`.
+- [x] Add a basic volume slider and pause/resume controls (operate on the local `<audio>` only — not the broadcast).
 
 ### 1.4 Liquidsoap control client (backend)
-- [ ] `backend/raidio/streaming/liquidsoap.py` — async client over Liquidsoap's telnet port.
-  - [ ] Methods: `push(uri)`, `skip()`, `set_var(name, value)`, `queue_size()`, `current_metadata()`.
-  - [ ] Connection pooled, reconnects on failure, raises typed exceptions.
-- [ ] Wire client into FastAPI app state (singleton, created on startup).
-- [ ] Add `POST /api/v1/admin/queue/skip` (no auth yet) that calls `client.skip()`.
+- [x] `backend/raidio/streaming/liquidsoap.py` — async client over Liquidsoap's telnet port.
+  - [x] Methods: `push(uri)`, `skip()`, `set_var(name, value)`, `queue_size()`, `current_metadata()`.
+  - [x] Connection pooled, reconnects on failure, raises typed exceptions.
+- [x] Wire client into FastAPI app state (singleton, created on startup).
+- [x] Add `POST /api/v1/admin/queue/skip` (no auth yet) that calls `client.skip()`.
 
 ### 1.5 Tests
-- [ ] Unit tests for `LiquidsoapClient` against an `asyncio.start_server` fake that records commands.
-- [ ] Integration test: with `dev:liquidsoap` and `dev:icecast` running locally, hit `/api/v1/health` and verify Icecast responds at `:8000/raidio.mp3` with a 200 + `audio/mpeg`.
+- [x] Unit tests for `LiquidsoapClient` against an `asyncio.start_server` fake that records commands.
+- [x] Integration test: with `dev:liquidsoap` and `dev:icecast` running locally, hit `/api/v1/health` and verify Icecast responds at `:8000/raidio.mp3` with a 200 + `audio/mpeg`.
 
 ### Exit criteria — Phase 1
-- Open the frontend in two browser tabs → click "Start" → both hear the same audio in sync.
-- POST to skip endpoint → audio cuts; Liquidsoap falls back to the `single()` source.
-- Test suite green.
+- [x] Open the frontend in two browser tabs → click "Start" → both hear the same audio in sync.
+- [x] POST to skip endpoint → audio cuts; Liquidsoap falls back to the `single()` source.
+- [x] Test suite green.
 
 ---
 

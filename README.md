@@ -46,7 +46,20 @@ This project utilizes [Taskfile](https://taskfile.dev/docs/guide) for task autom
 ### Prerequisites
 *   [Taskfile](https://taskfile.dev/installation/)
 *   [uv](https://docs.astral.sh/uv/getting-started/installation/)
-*   [Bun](https://bun.sh/docs/installation)
+*   [Bun](https://bun.sh/docs/installation/)
+*   [Icecast 2](https://icecast.org/) — HTTP audio broadcast server
+*   [Liquidsoap](https://www.liquidsoap.info/) — server-side audio engine
+*   [ffmpeg](https://ffmpeg.org/) — audio transcoding (also for silencedetect in Phase 4)
+
+#### Installing runtime dependencies (Ubuntu/Debian)
+```bash
+sudo apt-get install icecast2 liquidsoap ffmpeg
+```
+
+#### Installing runtime dependencies (macOS)
+```bash
+brew install icecast liquidsoap ffmpeg
+```
 
 ### Installation & Running
 

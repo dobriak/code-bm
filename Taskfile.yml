@@ -3,6 +3,13 @@ version: "3"
 vars:
   BACKEND_DIR: "backend"
   FRONTEND_DIR: "frontend"
+  LIQUIDSOAP_HOST: "127.0.0.1"
+  LIQUIDSOAP_TELNET_PORT: "1234"
+  LIQUIDSOAP_FALLBACK_FILE: "./liquidsoap/test.mp3"
+  ICECAST_HOST: "127.0.0.1"
+  ICECAST_PORT: "8000"
+  ICECAST_SOURCE_PASSWORD: "hackme"
+  ICECAST_MOUNT: "/raidio.mp3"
 
 tasks:
   install:
@@ -32,14 +39,30 @@ tasks:
       - bun run dev
 
   dev:liquidsoap:
-    desc: "Placeholder: start Liquidsoap audio engine"
+    desc: "Start Liquidsoap audio engine (telnet on :1234)"
+    dir: "."
     cmds:
-      - echo "Liquidsoap not implemented yet (Phase 1)"
+      - |
+        LIQUIDSOAP_HOST={{.LIQUIDSOAP_HOST}}
+        LIQUIDSOAP_TELNET_PORT={{.LIQUIDSOAP_TELNET_PORT}}
+        LIQUIDSOAP_FALLBACK_FILE={{.LIQUIDSOAP_FALLBACK_FILE}}
+        ICECAST_HOST={{.ICECAST_HOST}}
+        ICECAST_PORT={{.ICECAST_PORT}}
+        ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
+        ICECAST_MOUNT={{.ICECAST_MOUNT}}
+        envsubst < liquidsoap/raidio.liq > /tmp/raidio.liq
+      - liquidsoap /tmp/raidio.liq
 
   dev:icecast:
-    desc: "Placeholder: start Icecast broadcast server"
+    desc: "Start Icecast broadcast server on :8000"
+    dir: "."
     cmds:
-      - echo "Icecast not implemented yet (Phase 1)"
+      - |
+        ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
+        ICECAST_HOST={{.ICECAST_HOST}}
+        ICECAST_PORT={{.ICECAST_PORT}}
+        envsubst < liquidsoap/icecast.xml > /tmp/raidio-icecast.xml
+      - icecast2 -c /tmp/raidio-icecast.xml
 
   test:
     desc: "Run all tests"

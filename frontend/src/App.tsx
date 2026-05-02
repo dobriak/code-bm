@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import PlayerAudio from "./components/PlayerAudio";
 
 const queryClient = new QueryClient();
 
@@ -55,14 +56,16 @@ function App() {
           fontFamily: "system-ui, -apple-system, sans-serif",
           backgroundColor: "#0f0f0f",
           color: "#fafafa",
+          gap: "2rem",
         }}
       >
         <h1 style={{ fontSize: "3rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
           Raidio
         </h1>
-        <p style={{ marginTop: "1rem" }}>
+        <p>
           <HealthIndicator />
         </p>
+        <PlayerAudio />
       </div>
     </QueryClientProvider>
   );
