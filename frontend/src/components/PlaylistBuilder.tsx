@@ -3,7 +3,7 @@
  * Two-pane drag-and-drop layout: left (track browser) → right (playlist).
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   closestCenter,
@@ -126,6 +126,7 @@ export default function PlaylistBuilder() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Track browser state
   const [search, setSearch] = useState("");
@@ -233,6 +234,100 @@ export default function PlaylistBuilder() {
     }
   }, [playlistTrackIds]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // '/' focuses search
+      if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+      // 'r' triggers Feeling Lucky (only when not in an input)
+      if (e.key === "r" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        handleFeelingLucky();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleFeelingLucky]);
+
+  // Save playlist to .raidio file
+  const handleSave = useCallback(() => {
+    if (playlist.length === 0) return;
+
+    const data = {
+      raidio_version: 1,
+      name: name || "Untitled",
+      notes: notes || "",
+      items: playlist.map((e) => ({
+        type: e.track_id ? "track" as const : "jingle" as const,
+        id: e.track_id ?? e.jingle_id ?? 0,
+        artist: e.artist,
+        title: e.title,
+        album: e.album,
+        overlay_at_ms: e.overlay_at_ms,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(name || "playlist").replace(/[^a-zA-Z0-9_-]/g, "_")}.raidio`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setToast("Playlist saved!");
+    setTimeout(() => setToast(null), 3000);
+  }, [playlist, name, notes]);
+
+  // Load playlist from .raidio file
+  const handleLoad = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".raidio,.json";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        if (!data.items || !Array.isArray(data.items)) {
+          setToast("Invalid playlist file");
+          setTimeout(() => setToast(null), 4000);
+          return;
+        }
+
+        // Restore name and notes
+        if (data.name) setName(data.name);
+        if (data.notes) setNotes(data.notes);
+
+        // Convert items back to playlist entries
+        const loaded: PlaylistEntry[] = data.items.map(
+          (item: { type?: string; id?: number; artist?: string | null; title?: string | null; album?: string | null; overlay_at_ms?: number | null }) => ({
+            id: `${item.type || "track"}-${item.id || 0}-${Date.now()}-${Math.random()}`,
+            track_id: item.type === "track" ? item.id ?? null : null,
+            jingle_id: item.type === "jingle" ? item.id ?? null : null,
+            artist: item.artist ?? null,
+            title: item.title ?? null,
+            album: item.album ?? null,
+            duration_ms: null,
+            overlay_at_ms: item.overlay_at_ms ?? null,
+          }),
+        );
+
+        setPlaylist(loaded);
+        setToast(`Loaded ${loaded.length} items`);
+        setTimeout(() => setToast(null), 4000);
+      } catch {
+        setToast("Failed to parse playlist file");
+        setTimeout(() => setToast(null), 4000);
+      }
+    };
+    input.click();
+  }, []);
+
   // Submit playlist
   const handleSubmit = useCallback(async () => {
     if (playlist.length === 0 || !name.trim()) return;
@@ -281,10 +376,11 @@ export default function PlaylistBuilder() {
           <div style={{ flex: 1, position: "relative" }}>
             <span style={{ position: "absolute", left: "0.75rem", top: "50%", transform: "translateY(-50%)", color: "#555" }}>🔍</span>
             <input
+              ref={searchInputRef}
               type="text"
-              placeholder="Search tracks, artists, albums…"
+              placeholder="Search tracks, artists, albums… (/ to focus)"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)
               style={{
                 width: "100%",
                 padding: "0.625rem 0.75rem 0.625rem 2.25rem",
@@ -438,8 +534,41 @@ export default function PlaylistBuilder() {
                 {submitting ? "Sending…" : "Send to Queue"}
               </button>
             </div>
+            <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.375rem" }}>
+              <button
+                onClick={handleSave}
+                disabled={playlist.length === 0}
+                style={{
+                  flex: 1,
+                  padding: "0.375rem",
+                  fontSize: "0.6875rem",
+                  border: "1px solid #333",
+                  borderRadius: "0.375rem",
+                  backgroundColor: "transparent",
+                  color: playlist.length > 0 ? "#aaa" : "#444",
+                  cursor: playlist.length > 0 ? "pointer" : "not-allowed",
+                }}
+              >
+                💾 Save
+              </button>
+              <button
+                onClick={handleLoad}
+                style={{
+                  flex: 1,
+                  padding: "0.375rem",
+                  fontSize: "0.6875rem",
+                  border: "1px solid #333",
+                  borderRadius: "0.375rem",
+                  backgroundColor: "transparent",
+                  color: "#aaa",
+                  cursor: "pointer",
+                }}
+              >
+                📂 Load
+              </button>
+            </div>
             <p style={{ fontSize: "0.6875rem", color: "#444", margin: "0.5rem 0 0" }}>
-              Double-click a track to add it · Drag to reorder
+              Double-click a track to add it · Drag to reorder · <kbd style={{ fontSize: "0.625rem", background: "#222", padding: "0 0.25rem", borderRadius: "2px" }}>/</kbd> search · <kbd style={{ fontSize: "0.625rem", background: "#222", padding: "0 0.25rem", borderRadius: "2px" }}>r</kbd> lucky
             </p>
           </div>
 

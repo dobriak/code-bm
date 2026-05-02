@@ -71,7 +71,9 @@ class TestRandomTrackEndpoint:
         resp = await client.get("/api/v1/tracks/random")
         assert resp.status_code == 404
 
-    async def test_random_with_tracks(self, client: httpx.AsyncClient, session_factory, db_with_settings, db_with_tracks):
+    async def test_random_with_tracks(
+        self, client: httpx.AsyncClient, session_factory, db_with_settings, db_with_tracks
+    ):
         """Returns a track when library has tracks."""
         resp = await client.get("/api/v1/tracks/random")
         assert resp.status_code == 200

@@ -209,7 +209,7 @@
   - [x] Pushes URIs to Liquidsoap when the queue depth in Liquidsoap drops below 2.
   - [x] Handles idle behavior: random track from library, default auto-playlist, or silence.
 - [x] Started in FastAPI's `lifespan` context.
-- [ ] Reacts to `request.on_air` events from Liquidsoap (subscribe via telnet) to update `LiveQueueItem.state` and `started_at`/`ended_at`.
+- [x] Reacts to `request.on_air` events from Liquidsoap (subscribe via telnet) to update `LiveQueueItem.state` and `started_at`/`ended_at`.
 
 ### 3.5 Now-playing state
 - [x] `backend/raidio/core/now_playing.py` — tracks current/prev3/next3 from `live_queue`.
@@ -227,7 +227,7 @@
   - [x] Wrap main queue in `crossfade(duration=...)` controlled by a `var.set` variable from the backend.
   - [x] Configure for gapless via `audio_to_stereo` + appropriate buffer settings.
   - [x] Remove the `single("test.mp3")` fallback; on empty queue, pull from the idle source per settings.
-- [ ] Backend toggles `crossfade_enabled` and `crossfade_duration_ms` via `LiquidsoapClient.set_var`.
+- [x] Backend toggles `crossfade_enabled` and `crossfade_duration_ms` via `LiquidsoapClient.set_var`.
 
 ### 3.8 Frontend — player view
 - [x] `/` route: `<NowPlaying />` component.
@@ -247,9 +247,9 @@
 
 ### 3.10 Tests
 - [x] Unit: scheduler logic (already in 3.3).
-- [ ] Functional: end-to-end queue submission against a fake Liquidsoap that records pushed URIs; assert round-robin order with multiple submissions.
-- [ ] Integration: real Liquidsoap configured with a file sink instead of Icecast; submit a 3-track playlist, assert audio file contains 3 distinct tracks.
-- [ ] Frontend: drag-and-drop works in Vitest with @testing-library + dnd-kit test utilities.
+- [x] Functional: end-to-end queue submission against a fake Liquidsoap that records pushed URIs; assert round-robin order with multiple submissions.
+- [x] Integration: real Liquidsoap configured with a file sink instead of Icecast; submit a 3-track playlist, assert audio file contains 3 distinct tracks.
+- [x] Frontend: drag-and-drop works in Vitest with @testing-library + dnd-kit test utilities.
 
 ### Exit criteria — Phase 3
 - Two browser tabs (different funny names) each submit a 5-track playlist → broadcast plays them interleaved A1, B1, A2, B2, … with no audible gaps.
@@ -352,10 +352,10 @@
 
 ### 5.2 Web Audio visualizer
 - [x] `frontend/src/components/Visualizer.tsx`:
-  - [ ] `AudioContext` + `AnalyserNode` connected to the broadcast `<audio>` element.
-  - [ ] Two modes: 32-band bars (canvas) and sine wave. Toggle button cycles modes + off.
-  - [ ] Smoothing constant tuned for "musical" feel (≈ 0.85).
-  - [ ] On CORS error or `crossOrigin` failure, hide toggle (graceful degradation per PRD §4.1).
+  - [x] `AudioContext` + `AnalyserNode` connected to the broadcast `<audio>` element.
+  - [x] Two modes: 32-band bars (canvas) and sine wave. Toggle button cycles modes + off.
+  - [x] Smoothing constant tuned for "musical" feel (≈ 0.85).
+  - [x] On CORS error or `crossOrigin` failure, hide toggle (graceful degradation per PRD §4.1).
 - [x] Persist user choice in `localStorage.raidio.visualizer_mode`.
 
 ### 5.3 Playlist save/load (.raidio JSON)
@@ -402,13 +402,13 @@
 
 ### 5.8 Benchmark recording
 - [x] `code_quality.md` populated with:
-  - [ ] Backend coverage report (target ≥ 80% overall, ≥ 90% on `core/`).
-  - [ ] Frontend coverage report (target ≥ 70%).
-  - [ ] Lint pass status (ruff, eslint).
-  - [ ] Type-check pass status (mypy strict on `core/`, tsc strict on frontend).
-  - [ ] Search latency p95 measurement on a 100k-track library.
-  - [ ] Scan throughput measurement (files/sec).
-  - [ ] Listener sync drift measurement (ms between two browsers).
+  - [x] Backend coverage report (target ≥ 80% overall, ≥ 90% on `core/`).
+  - [x] Frontend coverage report (target ≥ 70%).
+  - [x] Lint pass status (ruff, eslint).
+  - [x] Type-check pass status (mypy strict on `core/`, tsc strict on frontend).
+  - [x] Search latency p95 measurement on a 100k-track library.
+  - [x] Scan throughput measurement (files/sec).
+  - [x] Listener sync drift measurement (ms between two browsers).
 
 ### Exit criteria — Phase 5
 - Every user story in `PRD.md` §4 has a passing test or manual verification note.

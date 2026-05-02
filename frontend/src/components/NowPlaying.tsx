@@ -6,6 +6,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { QueueTrack } from "../stores/nowPlayingStore";
 import { useNowPlayingStore } from "../stores/nowPlayingStore";
+import { loadTheme, setTheme, type Theme } from "../lib/theme";
+import Visualizer from "./Visualizer";
 
 const STREAM_URL = "http://localhost:8000/raidio.mp3";
 
@@ -78,6 +80,10 @@ export default function NowPlaying() {
   const [volume, setVolume] = useState(0.75);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(0);
+  const [fullscreenArt, setFullscreenArt] = useState(() => {
+    try { return localStorage.getItem("raidio.fullscreen_art") === "true"; } catch { return false; }
+  });
+  const [theme, setCurrentTheme] = useState<Theme>(loadTheme);
   const wsRef = useRef<WebSocket | null>(null);
 
   const { current, prev, next, bufferOffsetMs, connected, setNowPlaying, setConnected } =
@@ -157,22 +163,46 @@ export default function NowPlaying() {
     setVolume(parseFloat(e.target.value));
   }, []);
 
+  const toggleFullscreen = useCallback(() => {
+    setFullscreenArt((prev) => {
+      const next = !prev;
+      try { localStorage.setItem("raidio.fullscreen_art", String(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
+  const handleThemeToggle = useCallback(() => {
+    const next = setTheme(theme === "dark" ? "light" : "dark");
+    setCurrentTheme(next);
+  }, [theme]);
+
   const coverUrl = current?.cover_art_path
     ? `/api/v1/tracks/${current.track_id}/cover`
     : null;
 
+  // Dynamic colors based on theme
+  const isDark = theme === "dark";
+  const bg = isDark ? "#0f0f0f" : "#f5f5f5";
+  const fg = isDark ? "#fafafa" : "#111";
+  const muted = isDark ? "#888" : "#666";
+  const dimmed = isDark ? "#555" : "#999";
+  const cardBg = isDark ? "#1a1a1a" : "#e8e8e8";
+  const border = isDark ? "#333" : "#ccc";
+
   return (
     <div
+      data-theme={theme}
       style={{
         minHeight: "100vh",
-        backgroundColor: "#0f0f0f",
-        color: "#fafafa",
+        backgroundColor: fullscreenArt && coverUrl ? "#000" : bg,
+        color: fg,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         gap: "1.5rem",
         position: "relative",
+        transition: "background-color 0.3s ease, color 0.3s ease",
       }}
     >
       {/* Hidden audio element */}
@@ -220,18 +250,40 @@ export default function NowPlaying() {
         <span style={{ color: "#ef4444", fontSize: "0.875rem" }}>{error}</span>
       )}
 
+      {/* Full-screen art background */}
+      {fullscreenArt && coverUrl && (
+        <img
+          src={coverUrl}
+          alt=""
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100vh",
+            objectFit: "cover",
+            opacity: 0.3,
+            filter: "blur(40px) brightness(0.6)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+      )}
+
       {/* Album art */}
       <div
         style={{
-          width: "min(80vw, 80vh, 500px)",
-          height: "min(80vw, 80vh, 500px)",
-          borderRadius: "1rem",
+          width: fullscreenArt ? "min(90vw, 90vh, 700px)" : "min(80vw, 80vh, 500px)",
+          height: fullscreenArt ? "min(90vw, 90vh, 700px)" : "min(80vw, 80vh, 500px)",
+          borderRadius: fullscreenArt ? 0 : "1rem",
           overflow: "hidden",
-          backgroundColor: "#1a1a1a",
+          backgroundColor: cardBg,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+          boxShadow: fullscreenArt ? "none" : "0 20px 60px rgba(0,0,0,0.5)",
+          position: "relative",
+          zIndex: 1,
+          transition: "all 0.3s ease",
         }}
       >
         {coverUrl ? (
@@ -260,25 +312,25 @@ export default function NowPlaying() {
           >
             {current.title || "Unknown Track"}
           </h2>
-          <p style={{ margin: "0.25rem 0 0", color: "#888", fontSize: "1rem" }}>
+          <p style={{ margin: "0.25rem 0 0", color: muted, fontSize: "1rem" }}>
             {current.artist || "Unknown Artist"}
             {current.album ? ` — ${current.album}` : ""}
           </p>
           {current.owner_label && (
-            <p style={{ margin: "0.25rem 0 0", color: "#555", fontSize: "0.75rem" }}>
+            <p style={{ margin: "0.25rem 0 0", color: dimmed, fontSize: "0.75rem" }}>
               via {current.owner_label}
             </p>
           )}
           {remainingTime && (
-            <p style={{ margin: "0.5rem 0 0", color: "#555", fontSize: "0.875rem", fontVariantNumeric: "tabular-nums" }}>
+            <p style={{ margin: "0.5rem 0 0", color: dimmed, fontSize: "0.875rem", fontVariantNumeric: "tabular-nums" }}>
               -{remainingTime}
             </p>
           )}
         </div>
       ) : (
         <div style={{ textAlign: "center" }}>
-          <p style={{ color: "#555", fontSize: "1.125rem" }}>Nothing playing</p>
-          <p style={{ color: "#333", fontSize: "0.8125rem" }}>
+          <p style={{ color: dimmed, fontSize: "1.125rem" }}>Nothing playing</p>
+          <p style={{ color: dimmed, opacity: 0.6, fontSize: "0.8125rem" }}>
             Submit a playlist from the Create page
           </p>
         </div>
@@ -318,16 +370,26 @@ export default function NowPlaying() {
         </div>
       )}
 
+      {/* Visualizer */}
+      {started && !fullscreenArt && (
+        <div style={{ width: "min(90vw, 500px)", position: "relative", zIndex: 1 }}>
+          <Visualizer audioRef={audioRef} />
+        </div>
+      )}
+
       {/* Local controls */}
       {started && (
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "1rem",
-            padding: "0.75rem 1.5rem",
-            backgroundColor: "#1a1a1a",
+            gap: "0.75rem",
+            padding: "0.625rem 1.25rem",
+            backgroundColor: isDark ? "rgba(26,26,26,0.8)" : "rgba(232,232,232,0.8)",
+            backdropFilter: "blur(8px)",
             borderRadius: "2rem",
+            position: "relative",
+            zIndex: 1,
           }}
         >
           <button
@@ -335,14 +397,14 @@ export default function NowPlaying() {
             aria-label={playing ? "Pause" : "Play"}
             title="Local pause only — does not affect broadcast"
             style={{
-              width: "2.5rem",
-              height: "2.5rem",
+              width: "2.25rem",
+              height: "2.25rem",
               borderRadius: "50%",
-              border: "2px solid #fafafa",
+              border: `2px solid ${fg}`,
               backgroundColor: "transparent",
-              color: "#fafafa",
+              color: fg,
               cursor: "pointer",
-              fontSize: "1rem",
+              fontSize: "0.875rem",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -355,9 +417,9 @@ export default function NowPlaying() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.875rem",
-              color: "#fafafa",
+              gap: "0.375rem",
+              fontSize: "0.75rem",
+              color: fg,
               opacity: 0.7,
             }}
             title="Local volume only — does not affect broadcast"
@@ -371,16 +433,53 @@ export default function NowPlaying() {
               value={volume}
               onChange={handleVolumeChange}
               aria-label="Volume"
-              style={{ width: "100px", accentColor: "#fafafa" }}
+              style={{ width: "80px", accentColor: fg }}
             />
           </label>
+
+          {/* Divider */}
+          <span style={{ width: "1px", height: "1.25rem", backgroundColor: border }} />
+
+          {/* Full-screen art toggle */}
+          <button
+            onClick={toggleFullscreen}
+            aria-label={fullscreenArt ? "Exit full-screen art" : "Full-screen art"}
+            title={fullscreenArt ? "Show controls" : "Art-only mode"}
+            style={{
+              background: "none",
+              border: "none",
+              color: fullscreenArt ? "#22c55e" : dimmed,
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              padding: "0 0.25rem",
+            }}
+          >
+            {fullscreenArt ? "⊞" : "⊡"}
+          </button>
+
+          {/* Theme toggle */}
+          <button
+            onClick={handleThemeToggle}
+            aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+            title={`Switch to ${isDark ? "light" : "dark"} theme`}
+            style={{
+              background: "none",
+              border: "none",
+              color: dimmed,
+              cursor: "pointer",
+              fontSize: "0.875rem",
+              padding: "0 0.25rem",
+            }}
+          >
+            {isDark ? "☀" : "☾"}
+          </button>
 
           {/* Connection indicator */}
           <span
             title={connected ? "Connected to server" : "Disconnected"}
             style={{
-              width: "8px",
-              height: "8px",
+              width: "6px",
+              height: "6px",
               borderRadius: "50%",
               backgroundColor: connected ? "#22c55e" : "#ef4444",
             }}

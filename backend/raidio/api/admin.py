@@ -55,7 +55,9 @@ def get_analysis_pool() -> AnalysisWorkerPool:
         settings = Settings()
         _analysis_pool = AnalysisWorkerPool(
             session_factory=get_session_factory(settings=settings),
-            min_quiet_duration_s=settings.min_quiet_duration_s if hasattr(settings, 'min_quiet_duration_s') else 2.0,
+            min_quiet_duration_s=settings.min_quiet_duration_s
+            if hasattr(settings, "min_quiet_duration_s")
+            else 2.0,
         )
     return _analysis_pool
 
@@ -123,23 +125,25 @@ async def admin_stats(admin_email: Annotated[str, Depends(require_admin)]):
         ).scalar() or 0
         total_playtime_ms = (
             await session.execute(
-                select(func.coalesce(func.sum(Track.duration_ms), 0)).where(Track.duration_ms.isnot(None))
+                select(func.coalesce(func.sum(Track.duration_ms), 0)).where(
+                    Track.duration_ms.isnot(None)
+                )
             )
         ).scalar() or 0
         queue_length = (
             await session.execute(
-                select(func.count()).select_from(LiveQueueItem).where(
-                    LiveQueueItem.state.in_([LiveQueueState.PENDING, LiveQueueState.PLAYING])
-                )
+                select(func.count())
+                .select_from(LiveQueueItem)
+                .where(LiveQueueItem.state.in_([LiveQueueState.PENDING, LiveQueueState.PLAYING]))
             )
         ).scalar() or 0
 
         # Determine broadcast status
         playing = (
             await session.execute(
-                select(func.count()).select_from(LiveQueueItem).where(
-                    LiveQueueItem.state == LiveQueueState.PLAYING
-                )
+                select(func.count())
+                .select_from(LiveQueueItem)
+                .where(LiveQueueItem.state == LiveQueueState.PLAYING)
             )
         ).scalar() or 0
         broadcast_status = "playing" if playing > 0 else "idle"
@@ -300,9 +304,7 @@ async def reanalyze_track(
             raise HTTPException(status_code=404, detail="Track not found")
 
         # Clear existing analysis
-        await session.execute(
-            delete(QuietPassage).where(QuietPassage.track_id == track_id)
-        )
+        await session.execute(delete(QuietPassage).where(QuietPassage.track_id == track_id))
         track.analysis_status = AnalysisStatus.PENDING
         track.analysis_error = None
         track.audio_analyzed_at = None
@@ -368,10 +370,7 @@ async def get_queue(admin_email: Annotated[str, Depends(require_admin)]):
     """Get the current live queue and active user playlists."""
     factory = get_session_factory()
     async with factory() as session:
-        result = await session.execute(
-            select(LiveQueueItem)
-            .order_by(LiveQueueItem.position)
-        )
+        result = await session.execute(select(LiveQueueItem).order_by(LiveQueueItem.position))
         lq_items = result.scalars().all()
 
         items: list[QueueItemResponse] = []
@@ -382,7 +381,10 @@ async def get_queue(admin_email: Annotated[str, Depends(require_admin)]):
                 track = await session.get(Track, lq.track_id)
                 if track:
                     artist, title, album, duration_ms = (
-                        track.artist, track.title, track.album, track.duration_ms
+                        track.artist,
+                        track.title,
+                        track.album,
+                        track.duration_ms,
                     )
             elif lq.jingle_id:
                 jingle = await session.get(Jingle, lq.jingle_id)
@@ -394,19 +396,21 @@ async def get_queue(admin_email: Annotated[str, Depends(require_admin)]):
                 if pl:
                     owner_label = pl.owner_label
 
-            items.append(QueueItemResponse(
-                id=lq.id,
-                position=lq.position,
-                playlist_id=lq.playlist_id,
-                track_id=lq.track_id,
-                jingle_id=lq.jingle_id,
-                state=lq.state.value,
-                artist=artist,
-                title=title,
-                album=album,
-                duration_ms=duration_ms,
-                owner_label=owner_label,
-            ))
+            items.append(
+                QueueItemResponse(
+                    id=lq.id,
+                    position=lq.position,
+                    playlist_id=lq.playlist_id,
+                    track_id=lq.track_id,
+                    jingle_id=lq.jingle_id,
+                    state=lq.state.value,
+                    artist=artist,
+                    title=title,
+                    album=album,
+                    duration_ms=duration_ms,
+                    owner_label=owner_label,
+                )
+            )
 
         # Active playlists
         active_pls = await session.execute(
@@ -534,9 +538,7 @@ async def list_auto_playlists(admin_email: Annotated[str, Depends(require_admin)
     factory = get_session_factory()
     async with factory() as session:
         result = await session.execute(
-            select(Playlist)
-            .where(Playlist.kind == PlaylistKind.AUTO)
-            .order_by(Playlist.name)
+            select(Playlist).where(Playlist.kind == PlaylistKind.AUTO).order_by(Playlist.name)
         )
         playlists = result.scalars().all()
 

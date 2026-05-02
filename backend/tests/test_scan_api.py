@@ -7,7 +7,9 @@ from __future__ import annotations
 
 
 class TestScanStatusEndpoint:
-    async def test_scan_status_returns_list(self, client, admin_headers, session_factory, db_with_settings):
+    async def test_scan_status_returns_list(
+        self, client, admin_headers, session_factory, db_with_settings
+    ):
         """Returns list of scan jobs."""
         resp = await client.get("/api/v1/admin/scan/status", headers=admin_headers)
         assert resp.status_code == 200
@@ -21,7 +23,9 @@ class TestScanStatusEndpoint:
 
 
 class TestScanLibraryEndpoint:
-    async def test_scan_library_returns_job_id(self, client, admin_headers, session_factory, db_with_settings):
+    async def test_scan_library_returns_job_id(
+        self, client, admin_headers, session_factory, db_with_settings
+    ):
         """Returns scan_job_id and running status."""
         resp = await client.post(
             "/api/v1/admin/scan/library",
@@ -39,7 +43,9 @@ class TestScanLibraryEndpoint:
 
 
 class TestScanJinglesEndpoint:
-    async def test_scan_jingles_returns_job_id(self, client, admin_headers, session_factory, db_with_settings):
+    async def test_scan_jingles_returns_job_id(
+        self, client, admin_headers, session_factory, db_with_settings
+    ):
         """Returns scan_job_id and running status."""
         resp = await client.post(
             "/api/v1/admin/scan/jingles",

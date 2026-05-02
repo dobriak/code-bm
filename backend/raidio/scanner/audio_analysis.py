@@ -102,12 +102,14 @@ def filter_quiet_passages(
         if region is None:
             continue
 
-        filtered.append({
-            "start_ms": int(start_s * 1000),
-            "end_ms": int(end_s * 1000),
-            "duration_ms": int(duration_s * 1000),
-            "region": region,
-        })
+        filtered.append(
+            {
+                "start_ms": int(start_s * 1000),
+                "end_ms": int(end_s * 1000),
+                "duration_ms": int(duration_s * 1000),
+                "region": region,
+            }
+        )
 
     return filtered
 
@@ -220,9 +222,13 @@ class AnalysisWorkerPool:
                 # Run ffmpeg silencedetect
                 proc = await asyncio.create_subprocess_exec(
                     "ffmpeg",
-                    "-i", track.path,
-                    "-af", f"silencedetect=noise=-30dB:d={self._min_quiet_duration_s}",
-                    "-f", "null", "-",
+                    "-i",
+                    track.path,
+                    "-af",
+                    f"silencedetect=noise=-30dB:d={self._min_quiet_duration_s}",
+                    "-f",
+                    "null",
+                    "-",
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.PIPE,
                 )
@@ -237,14 +243,10 @@ class AnalysisWorkerPool:
 
                 # Parse and filter
                 silences = parse_silencedetect_output(stderr_text)
-                passages = filter_quiet_passages(
-                    silences, duration_s, self._min_quiet_duration_s
-                )
+                passages = filter_quiet_passages(silences, duration_s, self._min_quiet_duration_s)
 
                 # Clear existing passages and write new ones
-                await session.execute(
-                    delete(QuietPassage).where(QuietPassage.track_id == track_id)
-                )
+                await session.execute(delete(QuietPassage).where(QuietPassage.track_id == track_id))
 
                 for p in passages:
                     qp = QuietPassage(
@@ -262,7 +264,9 @@ class AnalysisWorkerPool:
                 track.analysis_error = None
                 logger.info(
                     "Track %d (%s): found %d quiet passages",
-                    track_id, track.title or track.path, len(passages),
+                    track_id,
+                    track.title or track.path,
+                    len(passages),
                 )
 
             except FileNotFoundError:

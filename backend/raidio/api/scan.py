@@ -59,13 +59,14 @@ async def _run_scan_background(
         try:
             # Remember which tracks were already analyzed before scan
             pre_scan_analyzed = {
-                t.id for t in (
+                t.id
+                for t in (
                     await session.execute(
-                        select(Track.id).where(
-                            Track.analysis_status == AnalysisStatus.DONE
-                        )
+                        select(Track.id).where(Track.analysis_status == AnalysisStatus.DONE)
                     )
-                ).scalars().all()
+                )
+                .scalars()
+                .all()
             }
 
             job = await run_library_scan(
@@ -84,28 +85,25 @@ async def _run_scan_background(
             # Enqueue newly added/updated tracks for Phase B analysis
             if job.tracks_added > 0 or job.tracks_updated > 0:
                 post_scan_tracks = (
-                    await session.execute(
-                        select(Track.id).where(
-                            Track.analysis_status == AnalysisStatus.PENDING
+                    (
+                        await session.execute(
+                            select(Track.id).where(Track.analysis_status == AnalysisStatus.PENDING)
                         )
                     )
-                ).scalars().all()
+                    .scalars()
+                    .all()
+                )
 
                 # Filter out tracks that were already analyzed
-                new_for_analysis = [
-                    tid for tid in post_scan_tracks if tid not in pre_scan_analyzed
-                ]
+                new_for_analysis = [tid for tid in post_scan_tracks if tid not in pre_scan_analyzed]
 
                 if new_for_analysis:
-
                     # Get or create the pool and enqueue
                     from raidio.api.admin import get_analysis_pool
 
                     pool = get_analysis_pool()
                     pool.enqueue_many(new_for_analysis)
-                    logger.info(
-                        "Enqueued %d tracks for Phase B analysis", len(new_for_analysis)
-                    )
+                    logger.info("Enqueued %d tracks for Phase B analysis", len(new_for_analysis))
 
                     # Start pool if not running
                     if not pool._running:
