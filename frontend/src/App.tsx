@@ -1,7 +1,17 @@
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import PlayerAudio from "./components/PlayerAudio";
+import PlayerPage from "./pages/PlayerPage";
+import CreatePage from "./pages/CreatePage";
+import AdminPage from "./pages/AdminPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
 
 interface HealthResponse {
   status: string;
@@ -25,48 +35,43 @@ function HealthIndicator() {
     >
       <span
         style={{
-          width: "10px",
-          height: "10px",
+          width: "8px",
+          height: "8px",
           borderRadius: "50%",
           backgroundColor:
             isLoading ? "#f59e0b" : error ? "#ef4444" : "#22c55e",
         }}
       />
-      <span style={{ fontSize: "0.875rem", opacity: 0.7 }}>
+      <span style={{ fontSize: "0.75rem", opacity: 0.5 }}>
         {isLoading
           ? "checking…"
           : error
-            ? "backend unreachable"
-            : `backend ok — v${data?.version}`}
+            ? "offline"
+            : `v${data?.version}`}
       </span>
     </span>
+  );
+}
+
+function NavLayout() {
+  return (
+    <div style={{ position: "fixed", bottom: "1rem", right: "1rem", zIndex: 100 }}>
+      <HealthIndicator />
+    </div>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "system-ui, -apple-system, sans-serif",
-          backgroundColor: "#0f0f0f",
-          color: "#fafafa",
-          gap: "2rem",
-        }}
-      >
-        <h1 style={{ fontSize: "3rem", fontWeight: 700, letterSpacing: "-0.02em" }}>
-          Raidio
-        </h1>
-        <p>
-          <HealthIndicator />
-        </p>
-        <PlayerAudio />
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<PlayerPage />} />
+          <Route path="/create" element={<CreatePage />} />
+          <Route path="/admin" element={<AdminPage />} />
+        </Routes>
+        <NavLayout />
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

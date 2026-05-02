@@ -9,6 +9,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from raidio import __version__
+from raidio.api.catalog import router as catalog_router
+from raidio.api.scan import router as scan_router
 from raidio.db.settings import Settings
 from raidio.streaming.liquidsoap import LiquidsoapClient, LiquidsoapError
 
@@ -18,12 +20,19 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: ensure database directory exists, run migrations
-    from raidio.db.session import run_migrations
+    from raidio.db.bootstrap import ensure_default_settings
+    from raidio.db.session import get_session_factory, run_migrations
 
     run_migrations()
 
-    # Create Liquidsoap client and attempt connection (non-fatal)
     settings = Settings()
+
+    # Bootstrap default settings row
+    session_factory = get_session_factory(settings=settings)
+    async with session_factory() as session:
+        await ensure_default_settings(session, settings)
+
+    # Create Liquidsoap client and attempt connection (non-fatal)
     ls_client = LiquidsoapClient(
         host=settings.liquidsoap_host,
         port=settings.liquidsoap_telnet_port,
@@ -52,6 +61,11 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
 )
+
+
+# Include API routers
+app.include_router(catalog_router)
+app.include_router(scan_router)
 
 
 @app.get("/api/v1/health")

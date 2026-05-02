@@ -114,64 +114,64 @@
 **Goal:** Admin can point Raidio at a folder of MP3s and the database fills with rows. Browsing and search work in the UI. No streaming integration yet — Phase 1's hardcoded file still plays.
 
 ### 2.1 SQLAlchemy models
-- [ ] `backend/raidio/db/models.py` — implement every table from `DESIGN.md` §5:
-  - [ ] `Track`, `QuietPassage`, `Jingle`, `Playlist`, `PlaylistItem`, `LiveQueueItem`, `Setting`, `ScanJob`.
-  - [ ] All foreign keys, enums (`AnalysisStatus`, `QuietRegion`, `PlaylistKind`, `LiveQueueState`, `IdleBehavior`, `ScanKind`), check constraints.
-- [ ] Indices per `DESIGN.md` §5.2.
-- [ ] Alembic revision: `0002_initial_schema`.
-- [ ] Apply with `task db:migrate`.
+- [x] `backend/raidio/db/models.py` — implement every table from `DESIGN.md` §5:
+  - [x] `Track`, `QuietPassage`, `Jingle`, `Playlist`, `PlaylistItem`, `LiveQueueItem`, `Setting`, `ScanJob`.
+  - [x] All foreign keys, enums (`AnalysisStatus`, `QuietRegion`, `PlaylistKind`, `LiveQueueState`, `IdleBehavior`, `ScanKind`), check constraints.
+- [x] Indices per `DESIGN.md` §5.2.
+- [x] Alembic revision: `0002_initial_schema`.
+- [x] Apply with `task db:migrate`.
 
 ### 2.2 Settings bootstrap
-- [ ] On startup, ensure `settings` table has exactly one row; if missing, insert defaults: `crossfade_enabled=False`, `crossfade_duration_ms=4000`, `gapless_enabled=True`, `jingle_duck_db=-12.0`, `icecast_buffer_offset_ms=3000`, `idle_behavior='random'`, `library_path` and `jingles_path` from env.
+- [x] On startup, ensure `settings` table has exactly one row; if missing, insert defaults: `crossfade_enabled=False`, `crossfade_duration_ms=4000`, `gapless_enabled=True`, `jingle_duck_db=-12.0`, `icecast_buffer_offset_ms=3000`, `idle_behavior='random'`, `library_path` and `jingles_path` from env.
 
 ### 2.3 FTS5 virtual table
-- [ ] `backend/raidio/db/fts.py` — raw SQL to create `tracks_fts` virtual table over `(artist, album, title, genre)` with content table sync triggers.
-- [ ] Alembic revision: `0003_fts5`.
-- [ ] Helper: `def fts_query(text: str) -> str` that escapes user input and produces an FTS5 MATCH expression with prefix-fuzzy semantics (per `DESIGN.md` §8).
+- [x] `backend/raidio/db/fts.py` — raw SQL to create `tracks_fts` virtual table over `(artist, album, title, genre)` with content table sync triggers.
+- [x] Alembic revision: `0003_fts5`.
+- [x] Helper: `def fts_query(text: str) -> str` that escapes user input and produces an FTS5 MATCH expression with prefix-fuzzy semantics (per `DESIGN.md` §8).
 
 ### 2.4 Scanner — Phase A (tag extraction)
-- [ ] `backend/raidio/scanner/walker.py` — `scan_library(path)` async generator yielding `(absolute_path, file_size, mtime)` for every `.mp3`.
-- [ ] `backend/raidio/scanner/tags.py` — `read_tags(path) -> TrackTags` using Mutagen; extract: artist, album, title, genre, year, track number, disc number, duration, bitrate, sample rate, embedded cover art (bytes + mime).
-- [ ] `backend/raidio/scanner/cover_cache.py` — `store_cover(bytes, mime) -> Path` writing to `cache/covers/<sha1>.jpg|png`, deduplicated by hash.
-- [ ] `backend/raidio/scanner/library_scanner.py` — orchestrator:
-  - [ ] Computes `file_hash` (sha1 of first 64 KiB + size).
-  - [ ] Upserts `Track` rows.
-  - [ ] Detects removed files (path no longer exists, hash unique to removed path).
-  - [ ] Records progress in a `ScanJob` row.
-- [ ] Targets: ≥ 500 files/sec on SSD (`DESIGN.md` §6).
+- [x] `backend/raidio/scanner/walker.py` — `scan_library(path)` async generator yielding `(absolute_path, file_size, mtime)` for every `.mp3`.
+- [x] `backend/raidio/scanner/tags.py` — `read_tags(path) -> TrackTags` using Mutagen; extract: artist, album, title, genre, year, track number, disc number, duration, bitrate, sample rate, embedded cover art (bytes + mime).
+- [x] `backend/raidio/scanner/cover_cache.py` — `store_cover(bytes, mime) -> Path` writing to `cache/covers/<sha1>.jpg|png`, deduplicated by hash.
+- [x] `backend/raidio/scanner/library_scanner.py` — orchestrator:
+  - [x] Computes `file_hash` (sha1 of first 64 KiB + size).
+  - [x] Upserts `Track` rows.
+  - [x] Detects removed files (path no longer exists, hash unique to removed path).
+  - [x] Records progress in a `ScanJob` row.
+- [x] Targets: ≥ 500 files/sec on SSD (`DESIGN.md` §6).
 
 ### 2.5 Scanner triggering API
-- [ ] `POST /api/v1/admin/scan/library` — kicks off Phase A as a background asyncio task. Returns `scan_job_id`.
-- [ ] `POST /api/v1/admin/scan/jingles` — same for jingles directory.
-- [ ] `GET /api/v1/admin/scan/status` — current/recent jobs with counts.
-- [ ] `WebSocket /ws/admin/scan` — emits `{phase, total, done, current_path}` events.
-- [ ] **Note:** auth not yet enforced; mark these endpoints with a TODO and add `# TODO(phase4): require admin JWT`.
+- [x] `POST /api/v1/admin/scan/library` — kicks off Phase A as a background asyncio task. Returns `scan_job_id`.
+- [x] `POST /api/v1/admin/scan/jingles` — same for jingles directory.
+- [x] `GET /api/v1/admin/scan/status` — current/recent jobs with counts.
+- [x] `WebSocket /ws/admin/scan` — emits `{phase, total, done, current_path}` events.
+- [x] **Note:** auth not yet enforced; mark these endpoints with a TODO and add `# TODO(phase4): require admin JWT`.
 
 ### 2.6 Catalog read API (public)
-- [ ] `GET /api/v1/tracks` — query params per `DESIGN.md` §9. Cursor-based pagination keyed on `(artist, album, track_number, id)`.
-- [ ] `GET /api/v1/tracks/{id}` — full detail incl. quiet passages (empty list for now).
-- [ ] `GET /api/v1/tracks/{id}/cover` — streams the file from `cache/covers/`.
-- [ ] `GET /api/v1/artists`, `/albums`, `/genres` — facet listings with counts.
-- [ ] `GET /api/v1/jingles`.
+- [x] `GET /api/v1/tracks` — query params per `DESIGN.md` §9. Cursor-based pagination keyed on `(artist, album, track_number, id)`.
+- [x] `GET /api/v1/tracks/{id}` — full detail incl. quiet passages (empty list for now).
+- [x] `GET /api/v1/tracks/{id}/cover` — streams the file from `cache/covers/`.
+- [x] `GET /api/v1/artists`, `/albums`, `/genres` — facet listings with counts.
+- [x] `GET /api/v1/jingles`.
 
 ### 2.7 Frontend — admin scan panel (minimal, unauthenticated)
-- [ ] `/admin` route renders an `AdminScanPanel` component (auth comes in Phase 4).
-- [ ] Two buttons: "Scan library", "Scan jingles".
-- [ ] Live progress bar + tail of recent paths via WebSocket.
+- [x] `/admin` route renders an `AdminScanPanel` component (auth comes in Phase 4).
+- [x] Two buttons: "Scan library", "Scan jingles".
+- [x] Live progress bar + tail of recent paths via WebSocket.
 
 ### 2.8 Frontend — browse & search
-- [ ] `/create` route shows the playlist creator's left pane only for now: a virtualized track list (`react-virtuoso`).
-- [ ] Search box on top wired to `GET /tracks?q=`.
-- [ ] Faceted filters (artist, album, genre, year range, duration range) in a sidebar.
-- [ ] Hierarchical browse: Genres → Artists → Albums → Songs (tabs or breadcrumb nav).
-- [ ] Each track row shows artist–album–title and a placeholder marker for quiet passages (always neutral "pending" for now).
+- [x] `/create` route shows the playlist creator's left pane only for now: a virtualized track list (`react-virtuoso`).
+- [x] Search box on top wired to `GET /tracks?q=`.
+- [x] Faceted filters (artist, album, genre, year range, duration range) in a sidebar.
+- [x] Hierarchical browse: Genres → Artists → Albums → Songs (tabs or breadcrumb nav).
+- [x] Each track row shows artist–album–title and a placeholder marker for quiet passages (always neutral "pending" for now).
 
 ### 2.9 Tests
-- [ ] Unit: `read_tags` against a curated set of test MP3s with edge cases (missing tags, weird encodings, no cover art).
-- [ ] Unit: `fts_query` escape/build logic.
-- [ ] Functional: scanner against a temp directory of generated tiny MP3s (use `pydub` or pre-baked fixtures); assert correct row counts, correct removal detection.
-- [ ] Functional: every API endpoint with httpx.AsyncClient.
-- [ ] Frontend: Vitest tests for the search component and track-table virtualization.
+- [x] Unit: `read_tags` against a curated set of test MP3s with edge cases (missing tags, weird encodings, no cover art).
+- [x] Unit: `fts_query` escape/build logic.
+- [x] Functional: scanner against a temp directory of generated tiny MP3s (use `pydub` or pre-baked fixtures); assert correct row counts, correct removal detection.
+- [x] Functional: every API endpoint with httpx.AsyncClient.
+- [x] Frontend: Vitest tests for the search component and track-table virtualization.
 
 ### Exit criteria — Phase 2
 - Point `LIBRARY_PATH` at a real folder of ≥ 1000 MP3s, click "Scan library" → all tracks land in DB within 1 minute (SSD).

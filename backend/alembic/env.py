@@ -7,6 +7,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from raidio.db.base import Base
+from raidio.db.models import *  # noqa: F401,F403 — populate Base.metadata
 from raidio.db.settings import Settings
 
 # Alembic Config object
