@@ -21,36 +21,36 @@
 **Goal:** A clean repo where `task install` and `task dev` work end-to-end against placeholder code.
 
 ### 0.1 Repository structure
-- [ ] Create top-level directories per `DESIGN.md` §14: `backend/`, `frontend/`, `liquidsoap/`, `database/`, `docs/`, `cache/covers/`.
-- [ ] Add `.gitignore` covering: `database/raidio.db`, `cache/`, `__pycache__/`, `.venv/`, `node_modules/`, `dist/`, `.env`, `*.log`.
-- [ ] Add an MIT (or chosen) `LICENSE` file.
-- [ ] Add `README.md` at repo root linking to `DESIGN.md`, `PRD.md`, `IMPLEMENT.md`, `code_quality.md`.
+- [x] Create top-level directories per `DESIGN.md` §14: `backend/`, `frontend/`, `liquidsoap/`, `database/`, `docs/`, `cache/covers/`.
+- [x] Add `.gitignore` covering: `database/raidio.db`, `cache/`, `__pycache__/`, `.venv/`, `node_modules/`, `dist/`, `.env`, `*.log`.
+- [x] Add an MIT (or chosen) `LICENSE` file.
+- [x] Add `README.md` at repo root linking to `DESIGN.md`, `PRD.md`, `IMPLEMENT.md`, `code_quality.md`.
 
 ### 0.2 Backend bootstrap (Python 3.12 + uv)
-- [ ] `backend/pyproject.toml` with project metadata, Python ≥ 3.12, dependencies: `fastapi`, `uvicorn[standard]`, `sqlalchemy>=2`, `alembic`, `pydantic`, `pydantic-settings`, `python-jose[cryptography]`, `passlib[bcrypt]`, `mutagen`, `python-multipart`, `httpx`, `websockets`.
-- [ ] Dev deps: `pytest`, `pytest-asyncio`, `pytest-cov`, `ruff`, `mypy`, `httpx`.
-- [ ] `backend/.env.example` with every variable from `DESIGN.md` §11 (no real secrets).
-- [ ] `backend/raidio/__init__.py` exposes `__version__`.
-- [ ] `backend/raidio/main.py` minimal app: `GET /api/v1/health` returns `{"status": "ok", "version": __version__}`.
-- [ ] Confirm `uv sync` and `uv run uvicorn raidio.main:app --reload` work.
+- [x] `backend/pyproject.toml` with project metadata, Python ≥ 3.12, dependencies: `fastapi`, `uvicorn[standard]`, `sqlalchemy>=2`, `alembic`, `pydantic`, `pydantic-settings`, `python-jose[cryptography]`, `passlib[bcrypt]`, `mutagen`, `python-multipart`, `httpx`, `websockets`.
+- [x] Dev deps: `pytest`, `pytest-asyncio`, `pytest-cov`, `ruff`, `mypy`, `httpx`.
+- [x] `backend/.env.example` with every variable from `DESIGN.md` §11 (no real secrets).
+- [x] `backend/raidio/__init__.py` exposes `__version__`.
+- [x] `backend/raidio/main.py` minimal app: `GET /api/v1/health` returns `{"status": "ok", "version": __version__}`.
+- [x] Confirm `uv sync` and `uv run uvicorn raidio.main:app --reload` work.
 
 ### 0.3 Frontend bootstrap (React + TS + Bun)
-- [ ] `bun create vite frontend --template react-ts`, then commit.
-- [ ] Install runtime deps: `react-router-dom`, `zustand`, `@tanstack/react-query`, `@dnd-kit/core`, `@dnd-kit/sortable`, `react-virtuoso`.
-- [ ] Install dev deps: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`, `eslint`, `prettier`.
-- [ ] Configure ESLint + Prettier; add `bun lint` and `bun format` scripts.
-- [ ] `frontend/src/App.tsx` shows "Raidio" and pings `/api/v1/health` via React Query.
-- [ ] Vite dev server proxies `/api` and `/ws` to the backend on `:8001`.
+- [x] `bun create vite frontend --template react-ts`, then commit.
+- [x] Install runtime deps: `react-router-dom`, `zustand`, `@tanstack/react-query`, `@dnd-kit/core`, `@dnd-kit/sortable`, `react-virtuoso`.
+- [x] Install dev deps: `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@playwright/test`, `eslint`, `prettier`.
+- [x] Configure ESLint + Prettier; add `bun lint` and `bun format` scripts.
+- [x] `frontend/src/App.tsx` shows "Raidio" and pings `/api/v1/health` via React Query.
+- [x] Vite dev server proxies `/api` and `/ws` to the backend on `:8001`.
 
 ### 0.4 Database scaffold
-- [ ] `backend/raidio/db/base.py` — SQLAlchemy `DeclarativeBase`.
-- [ ] `backend/raidio/db/session.py` — engine + `async_sessionmaker`, points at `database/raidio.db` (path from settings).
-- [ ] `backend/raidio/db/settings.py` — `pydantic-settings` loader for `.env`.
-- [ ] Initialize Alembic in `backend/alembic/`; first revision creates an empty schema (no tables yet).
-- [ ] On app startup, ensure `database/` directory exists and run `alembic upgrade head`.
+- [x] `backend/raidio/db/base.py` — SQLAlchemy `DeclarativeBase`.
+- [x] `backend/raidio/db/session.py` — engine + `async_sessionmaker`, points at `database/raidio.db` (path from settings).
+- [x] `backend/raidio/db/settings.py` — `pydantic-settings` loader for `.env`.
+- [x] Initialize Alembic in `backend/alembic/`; first revision creates an empty schema (no tables yet).
+- [x] On app startup, ensure `database/` directory exists and run `alembic upgrade head`.
 
 ### 0.5 Taskfile orchestration
-- [ ] `Taskfile.yml` at root with tasks:
+- [x] `Taskfile.yml` at root with tasks:
   - `install` → installs backend (`uv sync`) and frontend (`bun install`) deps
   - `dev:backend` → runs FastAPI on `:8001`
   - `dev:frontend` → runs Vite on `:5173`
@@ -60,15 +60,15 @@
   - `test:backend`, `test:frontend`, `test` → all
   - `lint`, `format`
   - `db:migrate`, `db:revision -- "msg"`
-- [ ] Confirm `task --list` shows all tasks and `task install && task dev:backend` works.
+- [x] Confirm `task --list` shows all tasks and `task install && task dev:backend` works.
 
 ### 0.6 CI skeleton (optional but recommended)
-- [ ] `.github/workflows/ci.yml` runs `task lint && task test` on push.
+- [x] `.github/workflows/ci.yml` runs `task lint && task test` on push.
 
 ### Exit criteria — Phase 0
-- `task install && task dev` runs without errors (Liquidsoap/Icecast tasks may be placeholders).
-- Browser at `http://localhost:5173` shows "Raidio" and a green "backend ok" indicator.
-- `task test` runs (zero tests is fine for now).
+- [x] `task install && task dev` runs without errors (Liquidsoap/Icecast tasks may be placeholders).
+- [x] Browser at `http://localhost:5173` shows "Raidio" and a green "backend ok" indicator.
+- [x] `task test` runs (zero tests is fine for now).
 
 ---
 

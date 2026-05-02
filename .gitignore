@@ -1,0 +1,16 @@
+database/raidio.db
+cache/
+__pycache__/
+.venv/
+node_modules/
+dist/
+.env
+*.log
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+frontend/.bun.lock
+frontend/dist/
+.DS_Store
+*.egg-info/

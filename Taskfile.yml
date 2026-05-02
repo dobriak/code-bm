@@ -1,0 +1,78 @@
+version: "3"
+
+vars:
+  PYTHON_BACKEND: backend
+  FRONTEND_DIR: frontend
+
+tasks:
+  install:
+    desc: Install all dependencies (backend + frontend)
+    cmds:
+      - cd {{.PYTHON_BACKEND}} && uv sync
+      - cd {{.FRONTEND_DIR}} && bun install
+
+  dev:backend:
+    desc: Run FastAPI backend on :8001
+    dir: "{{.PYTHON_BACKEND}}"
+    cmd: uv run uvicorn raidio.main:app --host 127.0.0.1 --port 8001 --reload
+
+  dev:frontend:
+    desc: Run Vite dev server on :5173
+    dir: "{{.FRONTEND_DIR}}"
+    cmd: bun run dev
+
+  dev:liquidsoap:
+    desc: Placeholder for Liquidsoap
+    cmd: echo "not implemented yet"
+
+  dev:icecast:
+    desc: Placeholder for Icecast
+    cmd: echo "not implemented yet"
+
+  dev:
+    desc: Run all dev servers in parallel
+    cmds:
+      - task: dev:backend
+      - task: dev:frontend
+      - task: dev:liquidsoap
+      - task: dev:icecast
+
+  test:backend:
+    desc: Run backend tests
+    dir: "{{.PYTHON_BACKEND}}"
+    cmd: uv run python -m pytest
+
+  test:frontend:
+    desc: Run frontend tests
+    dir: "{{.FRONTEND_DIR}}"
+    cmd: bun run test
+
+  test:
+    desc: Run all tests
+    cmds:
+      - task: test:backend
+      - task: test:frontend
+
+  lint:
+    desc: Run linting
+    cmds:
+      - cd {{.PYTHON_BACKEND}} && uv run python -m ruff check .
+      - cd {{.FRONTEND_DIR}} && bun run lint
+
+  format:
+    desc: Format code
+    cmds:
+      - cd {{.FRONTEND_DIR}} && bun run format
+
+  db:migrate:
+    desc: Run database migrations
+    dir: "{{.PYTHON_BACKEND}}"
+    cmd: uv run alembic upgrade head
+
+  db:revision:
+    desc: Create a new migration revision
+    dir: "{{.PYTHON_BACKEND}}"
+    params:
+      - name: message
+        required: true
+    cmd: uv run alembic revision --message "{{.message}}"

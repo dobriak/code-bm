@@ -1,4 +1,0 @@
-Based on the contents of @docs/PRD.md and @docs/DESIGN.md please design a phased implementation plan and write it to 'docs/IMPLEMENTATION.md'.
-The plan should group tasks in logical phases in chronological order and it should allow for completed tasks and phases to be checked off.
-Any phase that contains code writing tasks should follow test driven development principles.
-Documenting the newly developed features is also important and any newly developed feature should be documented in its corresponding layer (frontend or backend) README.md as well as referenced within the hiearchy of the `docs/index.md' documentation wiki.
