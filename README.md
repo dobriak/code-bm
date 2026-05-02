@@ -1,6 +1,8 @@
-# code-bm
+# Raidio
 
-Welcome to **code-bm**. This repository serves as a skeleton framework for code quality evaluation and benchmarking. It contains the necessary prompts and structural scaffolding to build **Raidio**, a fictitious application designed to test and evaluate development workflows, code quality standards, and tooling integrations.
+Welcome to **Raidio**. This repository implements the code for a home LAN level radio-like application that allows for users and administrator to create and queue music playlists with occasional jingle insertion.
+All design context can be found in [DESIGN.md](docs/DESIGN.md) and [PRD.md](docs/PRD.md). The state of the current application implementation is kept in [IMPLEMENT.md](docs/IMPLEMENT.md)
+
 
 ## Project Overview
 
