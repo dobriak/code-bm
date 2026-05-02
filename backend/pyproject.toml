@@ -1,0 +1,58 @@
+[project]
+name = "raidio"
+version = "0.1.0"
+description = "Self-hosted LAN-only personal radio station"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0",
+    "alembic>=1.15",
+    "aiosqlite>=0.21",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "python-jose[cryptography]>=3.3",
+    "passlib[bcrypt]>=1.7",
+    "mutagen>=1.47",
+    "python-multipart>=0.0.18",
+    "httpx>=0.28",
+    "websockets>=15.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
+    "ruff>=0.11",
+    "mypy>=1.15",
+    "httpx>=0.28",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["raidio"]
+extend-exclude = ["alembic"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["raidio"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["."]
+python_files = ["test_*.py"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

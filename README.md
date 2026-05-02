@@ -1,7 +1,13 @@
 # Raidio
 
 Welcome to **Raidio**. This repository implements the code for a home LAN level radio-like application that allows for users and administrator to create and queue music playlists with occasional jingle insertion.
-All design context can be found in [DESIGN.md](docs/DESIGN.md) and [PRD.md](docs/PRD.md). The state of the current application implementation is kept in [IMPLEMENT.md](docs/IMPLEMENT.md)
+All design context can be found in [DESIGN.md](docs/DESIGN.md) and [PRD.md](docs/PRD.md). The state of the current application implementation is kept in [IMPLEMENT.md](docs/IMPLEMENT.md).
+
+### Companion docs
+- [`docs/DESIGN.md`](docs/DESIGN.md) — full system design (architecture, data model, API surface, streaming decision)
+- [`docs/PRD.md`](docs/PRD.md) — product requirements, user stories, acceptance criteria
+- [`docs/IMPLEMENT.md`](docs/IMPLEMENT.md) — phased implementation plan with checklists and exit criteria
+- [`code_quality.md`](code_quality.md) — benchmarking results and coverage metrics
 
 
 ## Project Overview

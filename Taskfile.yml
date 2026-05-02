@@ -1,0 +1,110 @@
+version: "3"
+
+vars:
+  BACKEND_DIR: "backend"
+  FRONTEND_DIR: "frontend"
+
+tasks:
+  install:
+    desc: "Install all dependencies (backend + frontend)"
+    cmds:
+      - cd {{.BACKEND_DIR}} && uv sync
+      - cd {{.FRONTEND_DIR}} && bun install
+
+  dev:
+    desc: "Start all services in parallel"
+    cmds:
+      - task: dev:backend
+      - task: dev:frontend
+      - task: dev:liquidsoap
+      - task: dev:icecast
+
+  dev:backend:
+    desc: "Run FastAPI on :8001"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run uvicorn raidio.main:app --host 127.0.0.1 --port 8001 --reload
+
+  dev:frontend:
+    desc: "Run Vite dev server on :5173"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - bun run dev
+
+  dev:liquidsoap:
+    desc: "Placeholder: start Liquidsoap audio engine"
+    cmds:
+      - echo "Liquidsoap not implemented yet (Phase 1)"
+
+  dev:icecast:
+    desc: "Placeholder: start Icecast broadcast server"
+    cmds:
+      - echo "Icecast not implemented yet (Phase 1)"
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - task: test:backend
+      - task: test:frontend
+
+  test:backend:
+    desc: "Run backend tests with pytest"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run pytest --cov=raidio --cov-report=term-missing
+
+  test:frontend:
+    desc: "Run frontend tests with vitest"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - bun run test
+
+  lint:
+    desc: "Run all linters"
+    cmds:
+      - task: lint:backend
+      - task: lint:frontend
+
+  lint:backend:
+    desc: "Run ruff on backend"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run ruff check .
+      - uv run ruff format --check .
+
+  lint:frontend:
+    desc: "Run eslint on frontend"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - bun run lint
+
+  format:
+    desc: "Auto-format all code"
+    cmds:
+      - task: format:backend
+      - task: format:frontend
+
+  format:backend:
+    desc: "Format backend with ruff"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run ruff format .
+      - uv run ruff check --fix .
+
+  format:frontend:
+    desc: "Format frontend with prettier"
+    dir: "{{.FRONTEND_DIR}}"
+    cmds:
+      - bun run format
+
+  db:migrate:
+    desc: "Run Alembic migrations"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run alembic -c alembic.ini upgrade head
+
+  db:revision:
+    desc: "Create a new Alembic migration"
+    dir: "{{.BACKEND_DIR}}"
+    cmds:
+      - uv run alembic -c alembic.ini revision -m "{{.MSG}}"
