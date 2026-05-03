@@ -41,6 +41,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Runtime temp
+tmp/
+
 # Test
 playwright-report/
 test-results/

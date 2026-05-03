@@ -48,8 +48,9 @@ tasks:
         export ICECAST_PORT={{.ICECAST_PORT}}
         export ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
         export ICECAST_MOUNT={{.ICECAST_MOUNT}}
-        envsubst < liquidsoap/raidio.liq > /tmp/raidio.liq
-      - liquidsoap /tmp/raidio.liq
+        mkdir -p tmp
+        envsubst < liquidsoap/raidio.liq > tmp/raidio.liq
+      - liquidsoap tmp/raidio.liq
 
   dev:icecast:
     desc: "Start Icecast broadcast server on :8000"
@@ -59,8 +60,9 @@ tasks:
         export ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
         export ICECAST_HOST={{.ICECAST_HOST}}
         export ICECAST_PORT={{.ICECAST_PORT}}
-        envsubst < liquidsoap/icecast.xml > /tmp/raidio-icecast.xml
-      - icecast2 -c /tmp/raidio-icecast.xml
+        mkdir -p tmp/raidio-logs
+        envsubst < liquidsoap/icecast.xml > tmp/raidio-icecast.xml
+      - icecast2 -c tmp/raidio-icecast.xml
 
   test:
     desc: "Run all tests"

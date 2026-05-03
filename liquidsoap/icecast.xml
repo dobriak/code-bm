@@ -40,7 +40,7 @@
 
     <paths>
         <basedir>/usr/share/icecast2</basedir>
-        <logdir>/tmp/raidio-logs</logdir>
+        <logdir>tmp/raidio-logs</logdir>
         <webroot>/usr/share/icecast2/web</webroot>
         <adminroot>/usr/share/icecast2/admin</adminroot>
     </paths>
