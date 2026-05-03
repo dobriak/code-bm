@@ -19,11 +19,15 @@ tasks:
 
   dev:
     desc: "Start all services in parallel"
+    #deps: [dev:icecast, dev:liquidsoap]
     cmds:
-      - task: dev:backend
-      - task: dev:frontend
-      - task: dev:liquidsoap
-      - task: dev:icecast
+      #- task: dev:backend
+      #- task: dev:frontend
+      - tmux new-session -d -s dev_session 'task dev:liquidsoap'
+      - tmux split-window -h 'task dev:icecast'
+      - tmux split-window -h 'task dev:backend'
+      - tmux split-window -h 'task dev:frontend'
+      - tmux attach-session -t dev_session
 
   dev:backend:
     desc: "Run FastAPI on :8001"

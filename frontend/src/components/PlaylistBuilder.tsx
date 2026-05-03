@@ -380,7 +380,7 @@ export default function PlaylistBuilder() {
               type="text"
               placeholder="Search tracks, artists, albums… (/ to focus)"
               value={search}
-              onChange={(e) => setSearch(e.target.value)
+              onChange={(e) => setSearch(e.target.value)}
               style={{
                 width: "100%",
                 padding: "0.625rem 0.75rem 0.625rem 2.25rem",
