@@ -40,22 +40,21 @@ idle_source = amplify(0., noise())
 radio = fallback(track_sensitive=false, [main_queue, idle_source])
 
 # ── Crossfade ─────────────────────────────────────────────────────
-# Apply crossfade when enabled. The crossfade duration is read from
-# the ref variable so the backend can toggle it at runtime.
-def crossfade_filter(~source) =
-  crossfade(
-    duration=!crossfade_duration,
-    fade_in=linear(duration=!crossfade_duration),
-    fade_out=linear(duration=!crossfade_duration),
-    source
-  )
+# Apply crossfade using cross() with a custom transition.
+# The transition checks the crossfade_enabled ref so the backend
+# can toggle it at runtime via telnet.
+def crossfade_transition(a, b) =
+  if crossfade_enabled() then
+    add(normalize=false, [
+      fade.out(type="sin", duration=crossfade_duration(), a.source),
+      fade.in(type="sin", duration=crossfade_duration(), b.source)
+    ])
+  else
+    sequence([a.source, b.source])
+  end
 end
 
-# Wrap the source: when crossfade is enabled, apply the filter.
-radio = switch(id="crossfade_switch",
-  [({!crossfade_enabled}, crossfade_filter(radio))],
-  radio
-)
+radio = cross(id="crossfade", duration=crossfade_duration(), crossfade_transition, radio)
 
 # ── Jingle ducking with smooth_add ────────────────────────────────
 # When a jingle is pushed onto the jingles_queue, it ducks the main
@@ -63,7 +62,7 @@ radio = switch(id="crossfade_switch",
 # the main audio volume is restored.
 def jingle_duck(~normal, ~special) =
   # Compute the attenuation factor from dB
-  duck_factor = db_to_linear(!jingle_duck_db)
+  duck_factor = lin_of_dB(jingle_duck_db())
   # Normal source (main) is ducked when special (jingle) is available
   amplified_normal = amplify(duck_factor, normal)
   # Special source (jingle) plays at full volume

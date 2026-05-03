@@ -42,12 +42,12 @@ tasks:
     dir: "."
     cmds:
       - |
-        LIQUIDSOAP_HOST={{.LIQUIDSOAP_HOST}}
-        LIQUIDSOAP_TELNET_PORT={{.LIQUIDSOAP_TELNET_PORT}}
-        ICECAST_HOST={{.ICECAST_HOST}}
-        ICECAST_PORT={{.ICECAST_PORT}}
-        ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
-        ICECAST_MOUNT={{.ICECAST_MOUNT}}
+        export LIQUIDSOAP_HOST={{.LIQUIDSOAP_HOST}}
+        export LIQUIDSOAP_TELNET_PORT={{.LIQUIDSOAP_TELNET_PORT}}
+        export ICECAST_HOST={{.ICECAST_HOST}}
+        export ICECAST_PORT={{.ICECAST_PORT}}
+        export ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
+        export ICECAST_MOUNT={{.ICECAST_MOUNT}}
         envsubst < liquidsoap/raidio.liq > /tmp/raidio.liq
       - liquidsoap /tmp/raidio.liq
 
@@ -56,9 +56,9 @@ tasks:
     dir: "."
     cmds:
       - |
-        ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
-        ICECAST_HOST={{.ICECAST_HOST}}
-        ICECAST_PORT={{.ICECAST_PORT}}
+        export ICECAST_SOURCE_PASSWORD={{.ICECAST_SOURCE_PASSWORD}}
+        export ICECAST_HOST={{.ICECAST_HOST}}
+        export ICECAST_PORT={{.ICECAST_PORT}}
         envsubst < liquidsoap/icecast.xml > /tmp/raidio-icecast.xml
       - icecast2 -c /tmp/raidio-icecast.xml
 
